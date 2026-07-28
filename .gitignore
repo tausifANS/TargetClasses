@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Server runtime
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code local settings (machine-specific permissions, not for the repo)
+.claude/settings.local.json
+
+# Raw personal photo/video uploads at the project root — already archived in
+# assets/originals/, kept out of git to avoid duplicating large binaries.
+/*.jpeg
+/*.jpg
+/*.png
+/*.mp4

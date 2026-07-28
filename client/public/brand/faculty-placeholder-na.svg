@@ -1,0 +1,11 @@
+<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ph1" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B3A6B"/>
+      <stop offset="1" stop-color="#0A1730"/>
+    </linearGradient>
+  </defs>
+  <rect width="500" height="500" fill="url(#ph1)"/>
+  <circle cx="250" cy="250" r="150" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.35"/>
+  <text x="250" y="285" text-anchor="middle" font-family="Poppins, 'Segoe UI', sans-serif" font-size="150" font-weight="600" fill="#E9C878">NA</text>
+</svg>

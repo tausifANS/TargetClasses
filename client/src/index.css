@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.85rem;
+
+  --background: #FAFBFD;
+  --foreground: #0F1F2E;
+
+  --card: #FFFFFF;
+  --card-foreground: #0F1F2E;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #0F1F2E;
+
+  --primary: #16305C;
+  --primary-foreground: #FAFBFD;
+
+  --secondary: #F1F4F9;
+  --secondary-foreground: #16305C;
+
+  --muted: #F1F4F9;
+  --muted-foreground: #5C6B7A;
+
+  --accent: #FBF1D9;
+  --accent-foreground: #7A5B0E;
+
+  --gold: #C99A2E;
+  --gold-foreground: #2A2005;
+
+  --destructive: #DC2626;
+  --destructive-foreground: #FEF2F2;
+
+  --border: #E4E9F0;
+  --input: #E4E9F0;
+  --ring: #C99A2E;
+
+  --chart-1: #16305C;
+  --chart-2: #C99A2E;
+  --chart-3: #3B6EA5;
+  --chart-4: #7CA6C8;
+  --chart-5: #E8C766;
+}
+
+.dark {
+  --background: #070E1E;
+  --foreground: #F4F6FB;
+
+  --card: #0E1930;
+  --card-foreground: #F4F6FB;
+
+  --popover: #0E1930;
+  --popover-foreground: #F4F6FB;
+
+  --primary: #E8C766;
+  --primary-foreground: #1A1400;
+
+  --secondary: #142240;
+  --secondary-foreground: #F4F6FB;
+
+  --muted: #142240;
+  --muted-foreground: #9AA8BD;
+
+  --accent: #1B2D52;
+  --accent-foreground: #E8C766;
+
+  --gold: #E8C766;
+  --gold-foreground: #1A1400;
+
+  --destructive: #F87171;
+  --destructive-foreground: #290A0A;
+
+  --border: #1D2C4C;
+  --input: #1D2C4C;
+  --ring: #E8C766;
+
+  --chart-1: #E8C766;
+  --chart-2: #7CA6C8;
+  --chart-3: #3B6EA5;
+  --chart-4: #C99A2E;
+  --chart-5: #F4F6FB;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --animate-fade-up: fade-up 0.6s ease-out both;
+  --animate-fade-in: fade-in 0.6s ease-out both;
+  --animate-accordion-down: accordion-down 0.25s ease-out;
+  --animate-accordion-up: accordion-up 0.25s ease-out;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glass {
+    @apply bg-white/10 backdrop-blur-xl border border-white/15;
+  }
+  .section-container {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10;
+  }
+}
