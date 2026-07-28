@@ -7,6 +7,7 @@ import {
   contactInquirySchema,
   supportInquirySchema,
   careerInquirySchema,
+  portalApplicationSchema,
   testimonialInquirySchema,
 } from '../validators/inquiries.validators.js';
 
@@ -18,6 +19,7 @@ router.post('/admissions', validate(admissionInquirySchema), inquiriesController
 router.post('/contact', validate(contactInquirySchema), inquiriesController.submitContact);
 router.post('/support', validate(supportInquirySchema), inquiriesController.submitSupport);
 router.post('/careers', validate(careerInquirySchema), inquiriesController.submitCareer);
+router.post('/portal-application', validate(portalApplicationSchema), inquiriesController.submitPortalApplication);
 router.post('/testimonials', validate(testimonialInquirySchema), inquiriesController.submitTestimonial);
 
 export default router;

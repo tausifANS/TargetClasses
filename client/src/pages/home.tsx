@@ -1,4 +1,5 @@
 import { Hero } from '@/components/sections/hero';
+import { HighlightedPosts } from '@/components/sections/highlighted-posts';
 import { QuickFacts } from '@/components/sections/quick-facts';
 import { WhyChooseUs } from '@/components/sections/why-choose-us';
 import { FacultyPreview } from '@/components/sections/faculty-preview';
@@ -15,6 +16,7 @@ export function HomePage() {
         content="Target Classes is a premier tuition institute in Lar Town, Deoria (UP), established 2019 — offering Nursery to UKG with experienced faculty and a modern learning environment."
       />
       <Hero />
+      <HighlightedPosts />
       <QuickFacts />
       <WhyChooseUs />
       <FacultyPreview />

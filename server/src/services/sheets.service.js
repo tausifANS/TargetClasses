@@ -7,18 +7,30 @@ function assertConfigured() {
   }
 }
 
-export async function appendRow(sheetName, row) {
+async function postToSheets(body) {
   assertConfigured();
   const res = await fetch(env.GOOGLE_SHEETS_WEBAPP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: env.GOOGLE_SHEETS_API_SECRET, sheet: sheetName, row }),
+    body: JSON.stringify({ secret: env.GOOGLE_SHEETS_API_SECRET, ...body }),
   });
   const data = await res.json().catch(() => null);
   if (!data?.success) {
-    throw ApiError.internal(data?.message || 'Failed to save to Google Sheets');
+    throw ApiError.internal(data?.message || 'Failed to write to Google Sheets');
   }
   return data.data;
+}
+
+export async function appendRow(sheetName, row) {
+  return postToSheets({ sheet: sheetName, row });
+}
+
+export async function updateRow(sheetName, id, patch) {
+  return postToSheets({ sheet: sheetName, action: 'update', id, patch });
+}
+
+export async function deleteRow(sheetName, id) {
+  return postToSheets({ sheet: sheetName, action: 'delete', id });
 }
 
 export async function listRows(sheetName, { onlyPublished = false } = {}) {

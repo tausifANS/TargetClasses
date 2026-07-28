@@ -15,3 +15,12 @@ export const signRefreshToken = (payload) =>
 export const verifyAccessToken = (token) => jwt.verify(token, env.JWT_ACCESS_SECRET);
 
 export const verifyRefreshToken = (token) => jwt.verify(token, env.JWT_REFRESH_SECRET);
+
+/**
+ * Longer-lived session token for the Admin/Student portals, which don't (yet)
+ * implement the access/refresh rotation the main auth system uses — a single
+ * 12h token is a reasonable simplification for a single-admin, low-stakes
+ * internal tool. Verified with verifyAccessToken() same as everything else,
+ * since it's signed with the same secret.
+ */
+export const signAppToken = (payload) => jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: '12h' });

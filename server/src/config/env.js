@@ -17,6 +17,11 @@ const envSchema = z.object({
   GOOGLE_SHEETS_WEBAPP_URL: z.union([z.string().url(), z.literal('')]).optional(),
   GOOGLE_SHEETS_API_SECRET: z.string().optional(),
 
+  // Admin Portal — single account, credentials set by the institute owner.
+  // ADMIN_PASSWORD_HASH is a bcrypt hash, never the plaintext password.
+  ADMIN_USERNAME: z.string().optional(),
+  ADMIN_PASSWORD_HASH: z.string().optional(),
+
   JWT_ACCESS_SECRET: z.string().min(16, 'JWT_ACCESS_SECRET must be at least 16 characters'),
   JWT_REFRESH_SECRET: z.string().min(16, 'JWT_REFRESH_SECRET must be at least 16 characters'),
   JWT_ACCESS_EXPIRY: z.string().default('15m'),

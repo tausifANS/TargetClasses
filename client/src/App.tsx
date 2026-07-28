@@ -21,6 +21,7 @@ import { TermsPage } from '@/pages/terms';
 import { SupportPage } from '@/pages/support';
 import { CareersPage } from '@/pages/careers';
 import { StudentPortalPage } from '@/pages/student-portal';
+import { AdminPortalPage } from '@/pages/admin-portal';
 
 export default function App() {
   return (
@@ -48,7 +49,7 @@ export default function App() {
         <Route path="*" element={<PlaceholderPage title="Page Not Found" description="The page you're looking for doesn't exist." />} />
       </Route>
       <Route path="/student-portal" element={<StudentPortalPage />} />
-      <Route path="/admin" element={<PlaceholderPage title="Admin Dashboard" description="Coming in Phase 4." />} />
+      <Route path="/admin" element={<AdminPortalPage />} />
     </Routes>
   );
 }

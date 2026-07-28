@@ -31,6 +31,23 @@ export interface TopperRow {
   Year: string | number;
 }
 
+export interface PostRow {
+  Id: string;
+  SubmittedAt: string;
+  Title: string;
+  Body: string;
+  ImageUrl?: string;
+  Highlighted?: boolean | string;
+}
+
+export interface GalleryItemRow {
+  Id: string;
+  SubmittedAt: string;
+  Category: string;
+  ImageUrl: string;
+  Caption?: string;
+}
+
 async function fetchContent<T>(sheet: string): Promise<T[]> {
   const res = await api.get(`/content/${sheet}`);
   return res.data.data ?? [];
@@ -53,3 +70,5 @@ export const useTestimonials = () => useContentQuery<TestimonialRow>('testimonia
 export const useNotices = () => useContentQuery<NoticeRow>('notices', 'notices');
 export const useEvents = () => useContentQuery<EventRow>('events', 'events');
 export const useToppers = () => useContentQuery<TopperRow>('toppers', 'toppers');
+export const usePosts = () => useContentQuery<PostRow>('posts', 'posts');
+export const useGalleryItems = () => useContentQuery<GalleryItemRow>('gallery-items', 'gallery-items');

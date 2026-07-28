@@ -15,7 +15,7 @@
  *
  * Tabs are created automatically the first time each one is written to or read —
  * you don't need to create them by hand. To publish a testimonial / notice / event /
- * topper on the live site, open its tab and set the "Published" column to TRUE.
+ * topper / post on the live site, open its tab and set the "Published" column to TRUE.
  */
 
 const API_SECRET = 'REPLACE_WITH_YOUR_OWN_RANDOM_SECRET'; // generate one (e.g. `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`) and put the SAME value in server/.env as GOOGLE_SHEETS_API_SECRET — never commit the real value here
@@ -29,11 +29,26 @@ const SHEET_CONFIG = {
   Notices: ['Id', 'SubmittedAt', 'Title', 'Body', 'Published'],
   Events: ['Id', 'SubmittedAt', 'Title', 'Description', 'EventDate', 'Published'],
   Toppers: ['Id', 'SubmittedAt', 'StudentName', 'ClassName', 'Achievement', 'Year', 'Published'],
-  // Enrolled students for the Student Portal login (Student ID + DOB). Add rows
-  // here by hand once you've admitted a student — StudentId is whatever you want
-  // to hand the parent (e.g. TC-2026-001). AttendancePercent/FeeStatus are simple
-  // manually-updated summary fields, not a transaction ledger.
-  Students: ['Id', 'SubmittedAt', 'StudentId', 'StudentName', 'DOB', 'ClassName', 'ParentName', 'ParentPhone', 'AttendancePercent', 'FeeStatus', 'Status'],
+
+  // Student Portal signup requests — submitted from the public site, reviewed by
+  // the admin. Approving one creates a StudentAccounts row and emails credentials.
+  PortalApplications: ['Id', 'SubmittedAt', 'StudentName', 'DOB', 'ClassName', 'Subjects', 'ParentName', 'ParentPhone', 'Email', 'Address', 'Status'],
+
+  // Enrolled students who can log into the Student Portal (StudentId + password —
+  // PasswordHash is a bcrypt hash written by the server, never a plaintext password).
+  StudentAccounts: ['Id', 'SubmittedAt', 'StudentId', 'StudentName', 'ClassName', 'Email', 'ParentPhone', 'PasswordHash', 'Status', 'ApplicationId'],
+
+  // Punch in/out attendance, one row per student per day.
+  Attendance: ['Id', 'StudentId', 'Date', 'PunchIn', 'PunchOut'],
+
+  // Live/recorded classes the admin posts for students to access, filtered by ClassName.
+  Classes: ['Id', 'SubmittedAt', 'Title', 'Subject', 'ClassName', 'Type', 'Url', 'ScheduledAt', 'Published'],
+
+  // Admin-authored posts/announcements — Highlighted posts get featured styling on the site.
+  Posts: ['Id', 'SubmittedAt', 'Title', 'Body', 'ImageUrl', 'Highlighted', 'Published'],
+
+  // Admin-uploaded gallery photos (in addition to the static launch gallery).
+  GalleryItems: ['Id', 'SubmittedAt', 'Category', 'ImageUrl', 'Caption', 'Published'],
 };
 
 function ensureSheet_(name) {
@@ -98,26 +113,78 @@ function doPost(e) {
     checkSecret_(body);
     if (!body.sheet) throw new Error('Missing "sheet" field');
 
-    const headers = SHEET_CONFIG[body.sheet];
-    if (!headers) throw new Error('Unknown sheet: ' + body.sheet);
-
-    const sheet = ensureSheet_(body.sheet);
-    const row = body.row || {};
-    row.Id = row.Id || Utilities.getUuid();
-    row.SubmittedAt = row.SubmittedAt || new Date().toISOString();
-
-    const values = headers.map((h) => {
-      if (row[h] !== undefined) return row[h];
-      if (h === 'Status') return 'New';
-      if (h === 'Published') return false;
-      return '';
-    });
-    sheet.appendRow(values);
-
-    return jsonOutput_({ success: true, data: { id: row.Id } });
+    const action = body.action || 'append';
+    if (action === 'update') return jsonOutput_(updateRow_(body));
+    if (action === 'delete') return jsonOutput_(deleteRow_(body));
+    return jsonOutput_(appendRow_(body));
   } catch (err) {
     return jsonOutput_({ success: false, message: err.message });
   }
+}
+
+function appendRow_(body) {
+  const headers = SHEET_CONFIG[body.sheet];
+  if (!headers) throw new Error('Unknown sheet: ' + body.sheet);
+
+  const sheet = ensureSheet_(body.sheet);
+  const row = body.row || {};
+  row.Id = row.Id || Utilities.getUuid();
+  row.SubmittedAt = row.SubmittedAt || new Date().toISOString();
+
+  const values = headers.map((h) => {
+    if (row[h] !== undefined) return row[h];
+    if (h === 'Status') return 'New';
+    if (h === 'Published' || h === 'Highlighted') return false;
+    return '';
+  });
+  sheet.appendRow(values);
+
+  return { success: true, data: { id: row.Id } };
+}
+
+function findRowIndexById_(sheet, headers, id) {
+  const data = sheet.getDataRange().getValues();
+  const idIdx = headers.indexOf('Id');
+  for (let r = 1; r < data.length; r++) {
+    if (String(data[r][idIdx]) === String(id)) return { rowNumber: r + 1, rowValues: data[r] };
+  }
+  return null;
+}
+
+function updateRow_(body) {
+  const headers = SHEET_CONFIG[body.sheet];
+  if (!headers) throw new Error('Unknown sheet: ' + body.sheet);
+  if (!body.id) throw new Error('Missing "id" field');
+
+  const sheet = ensureSheet_(body.sheet);
+  const found = findRowIndexById_(sheet, headers, body.id);
+  if (!found) throw new Error('Row not found: ' + body.id);
+
+  const patch = body.patch || {};
+  const updated = {};
+  headers.forEach((h, c) => {
+    if (patch[h] !== undefined) {
+      sheet.getRange(found.rowNumber, c + 1).setValue(patch[h]);
+      updated[h] = patch[h];
+    } else {
+      updated[h] = found.rowValues[c] instanceof Date ? found.rowValues[c].toISOString() : found.rowValues[c];
+    }
+  });
+
+  return { success: true, data: updated };
+}
+
+function deleteRow_(body) {
+  const headers = SHEET_CONFIG[body.sheet];
+  if (!headers) throw new Error('Unknown sheet: ' + body.sheet);
+  if (!body.id) throw new Error('Missing "id" field');
+
+  const sheet = ensureSheet_(body.sheet);
+  const found = findRowIndexById_(sheet, headers, body.id);
+  if (!found) throw new Error('Row not found: ' + body.id);
+
+  sheet.deleteRow(found.rowNumber);
+  return { success: true, data: { id: body.id } };
 }
 
 function jsonOutput_(obj) {

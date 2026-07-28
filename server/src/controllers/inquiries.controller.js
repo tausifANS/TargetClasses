@@ -53,6 +53,22 @@ export const submitCareer = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, message: 'Application received' });
 });
 
+export const submitPortalApplication = asyncHandler(async (req, res) => {
+  const b = req.body;
+  await sheetsService.appendRow('PortalApplications', {
+    StudentName: b.studentName,
+    DOB: b.dob,
+    ClassName: b.className,
+    Subjects: b.subjects || '',
+    ParentName: b.parentName,
+    ParentPhone: b.parentPhone,
+    Email: b.email,
+    Address: b.address,
+    Status: 'Pending',
+  });
+  res.status(201).json({ success: true, message: 'Application received — we will review it and email you once approved' });
+});
+
 export const submitTestimonial = asyncHandler(async (req, res) => {
   const b = req.body;
   await sheetsService.appendRow('Testimonials', {

@@ -35,6 +35,17 @@ export const careerInquirySchema = z.object({
   message: z.string().min(5, 'Please tell us a bit about yourself'),
 });
 
+export const portalApplicationSchema = z.object({
+  studentName: z.string().min(2, "Student's full name is required"),
+  dob: z.string().min(1, 'Date of birth is required'),
+  className: z.string().min(1, 'Please select a class'),
+  subjects: z.string().optional().or(z.literal('')),
+  parentName: z.string().min(2, 'Parent/guardian name is required'),
+  parentPhone: phone,
+  email: z.string().email('A valid email is required to receive your login details'),
+  address: z.string().min(5, 'Address is required'),
+});
+
 export const testimonialInquirySchema = z.object({
   parentName: z.string().min(2, 'Name is required'),
   studentName: z.string().optional().or(z.literal('')),

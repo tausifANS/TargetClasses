@@ -1,36 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { ArrowLeft, LogOut, GraduationCap, User, Wallet, CalendarCheck, Megaphone } from 'lucide-react';
+import {
+  ArrowLeft,
+  LogOut,
+  GraduationCap,
+  User,
+  Megaphone,
+  Video,
+  PlayCircle,
+  Clock,
+  LogIn as LogInIcon,
+  CheckCircle2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { api, apiErrorMessage } from '@/lib/api';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { apiErrorMessage } from '@/lib/api';
+import { COACHING_CLASSES } from '@/constants/site';
 import { useNotices } from '@/hooks/use-content';
-
-interface StudentRecord {
-  studentId: string;
-  studentName: string;
-  className: string;
-  parentName: string;
-  attendancePercent?: string | number;
-  feeStatus?: string;
-  status?: string;
-}
-
-const STORAGE_KEY = 'tc_student_portal_session';
-
-const loginSchema = z.object({
-  studentId: z.string().min(1, 'Please enter your Student ID'),
-  dob: z.string().min(1, 'Please enter date of birth'),
-});
-type LoginForm = z.infer<typeof loginSchema>;
+import {
+  useIsStudentLoggedIn,
+  usePortalLogin,
+  usePortalLogout,
+  usePortalMe,
+  usePortalClasses,
+  usePortalAttendance,
+  usePunchIn,
+  usePunchOut,
+  usePortalApplication,
+} from '@/hooks/use-portal';
 
 function PortalHeader({ onLogout }: { onLogout?: () => void }) {
   return (
@@ -47,75 +53,223 @@ function PortalHeader({ onLogout }: { onLogout?: () => void }) {
   );
 }
 
-function LoginCard({ onSuccess }: { onSuccess: (s: StudentRecord) => void }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { studentId: '', dob: '' } });
+// ---- Login ----
 
-  const { mutateAsync } = useMutation({
-    mutationFn: (data: LoginForm) => api.post<{ data: StudentRecord }>('/portal/login', data),
+const loginSchema = z.object({
+  studentId: z.string().min(1, 'Please enter your Student ID'),
+  password: z.string().min(1, 'Please enter your password'),
+});
+type LoginForm = z.infer<typeof loginSchema>;
+
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { studentId: '', password: '' },
   });
+  const { mutateAsync } = usePortalLogin();
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const res = await mutateAsync(data);
-      onSuccess(res.data.data);
+      await mutateAsync(data);
+      toast.success('Welcome back!');
+      onSuccess();
     } catch (err) {
-      toast.error('Could not log in', { description: apiErrorMessage(err, 'No student found with that Student ID and date of birth.') });
+      toast.error('Could not log in', { description: apiErrorMessage(err, 'Invalid Student ID or password.') });
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10"
-    >
-      <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-gold/15 text-gold">
-        <GraduationCap className="size-7" />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label htmlFor="studentId" className="text-white/80">Student ID</Label>
+        <Input id="studentId" placeholder="e.g. TC-2026-001" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" {...register('studentId')} />
+        {errors.studentId && <p className="text-xs text-red-400">{errors.studentId.message}</p>}
       </div>
-      <h1 className="mt-5 text-center font-display text-2xl font-bold text-white sm:text-3xl">Student Portal</h1>
-      <p className="mt-2 text-center text-sm text-white/60">
-        Log in with your Student ID and date of birth to view attendance, fee status, and notices.
-      </p>
+      <div className="space-y-1.5">
+        <Label htmlFor="password" className="text-white/80">Password</Label>
+        <Input id="password" type="password" className="border-white/15 bg-white/5 text-white" {...register('password')} />
+        {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+      </div>
+      <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting}>
+        <LogInIcon className="size-4" /> Log In
+      </Button>
+    </form>
+  );
+}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+// ---- Apply ----
+
+const applySchema = z.object({
+  studentName: z.string().min(2, "Please enter the student's full name"),
+  dob: z.string().min(1, 'Please enter date of birth'),
+  className: z.enum(COACHING_CLASSES, { message: 'Please select a class' }),
+  subjects: z.string().optional(),
+  parentName: z.string().min(2, 'Please enter parent/guardian name'),
+  parentPhone: z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit phone number'),
+  email: z.string().email('A valid email is required to receive your login details'),
+  address: z.string().min(5, 'Please enter your address'),
+});
+type ApplyForm = z.infer<typeof applySchema>;
+
+function ApplyForm() {
+  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ApplyForm>({
+    resolver: zodResolver(applySchema),
+    defaultValues: { studentName: '', dob: '', subjects: '', parentName: '', parentPhone: '', email: '', address: '' },
+  });
+  const { mutateAsync } = usePortalApplication();
+
+  const onSubmit = async (data: ApplyForm) => {
+    try {
+      await mutateAsync(data);
+      toast.success('Application submitted', { description: "We'll email your login details once it's approved." });
+      reset();
+    } catch (err) {
+      toast.error('Could not submit application', { description: apiErrorMessage(err) });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="studentId" className="text-white/80">Student ID</Label>
-          <Input id="studentId" placeholder="e.g. TC-2026-001" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" {...register('studentId')} />
-          {errors.studentId && <p className="text-xs text-red-400">{errors.studentId.message}</p>}
+          <Label htmlFor="studentName" className="text-white/80">Student's Full Name</Label>
+          <Input id="studentName" className="border-white/15 bg-white/5 text-white" {...register('studentName')} />
+          {errors.studentName && <p className="text-xs text-red-400">{errors.studentName.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="dob" className="text-white/80">Date of Birth</Label>
           <Input id="dob" type="date" className="border-white/15 bg-white/5 text-white [color-scheme:dark]" {...register('dob')} />
           {errors.dob && <p className="text-xs text-red-400">{errors.dob.message}</p>}
         </div>
+      </div>
 
-        <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting}>
-          Log In
-        </Button>
-      </form>
+      <div className="space-y-1.5">
+        <Label htmlFor="className" className="text-white/80">Class</Label>
+        <Controller
+          control={control}
+          name="className"
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger id="className" className="w-full border-white/15 bg-white/5 text-white">
+                <SelectValue placeholder="Select a class" />
+              </SelectTrigger>
+              <SelectContent>
+                {COACHING_CLASSES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.className && <p className="text-xs text-red-400">{errors.className.message}</p>}
+      </div>
 
-      <p className="mt-6 text-center text-xs text-white/50">
-        Don't have your Student ID? Contact the institute directly and we'll help you out.
-      </p>
-    </motion.div>
+      <div className="space-y-1.5">
+        <Label htmlFor="subjects" className="text-white/80">Subjects (optional)</Label>
+        <Input id="subjects" placeholder="e.g. Physics, Chemistry, Maths" className="border-white/15 bg-white/5 text-white placeholder:text-white/40" {...register('subjects')} />
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="parentName" className="text-white/80">Parent/Guardian Name</Label>
+          <Input id="parentName" className="border-white/15 bg-white/5 text-white" {...register('parentName')} />
+          {errors.parentName && <p className="text-xs text-red-400">{errors.parentName.message}</p>}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="parentPhone" className="text-white/80">Phone Number</Label>
+          <Input id="parentPhone" type="tel" className="border-white/15 bg-white/5 text-white" {...register('parentPhone')} />
+          {errors.parentPhone && <p className="text-xs text-red-400">{errors.parentPhone.message}</p>}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-white/80">Email</Label>
+        <Input id="email" type="email" className="border-white/15 bg-white/5 text-white" {...register('email')} />
+        {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+        <p className="text-xs text-white/50">Your Student ID and password will be sent here once approved.</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="address" className="text-white/80">Address</Label>
+        <Textarea id="address" rows={2} className="border-white/15 bg-white/5 text-white" {...register('address')} />
+        {errors.address && <p className="text-xs text-red-400">{errors.address.message}</p>}
+      </div>
+
+      <Button type="submit" variant="gold" size="lg" className="w-full" disabled={isSubmitting}>
+        Submit Application
+      </Button>
+    </form>
   );
 }
 
-function Dashboard({ student }: { student: StudentRecord }) {
-  const { data: notices } = useNotices();
+// ---- Dashboard ----
+
+function PunchCard() {
+  const { data: attendance } = usePortalAttendance(true);
+  const punchIn = usePunchIn();
+  const punchOut = usePunchOut();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const todayRecord = attendance?.find((r) => r.Date === today);
+
+  const handlePunchIn = async () => {
+    try {
+      await punchIn.mutateAsync();
+      toast.success('Punched in!');
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    }
+  };
+  const handlePunchOut = async () => {
+    try {
+      await punchOut.mutateAsync();
+      toast.success('Punched out!');
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-3xl space-y-6"
-    >
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="flex items-center gap-2.5 text-white/70">
+        <Clock className="size-5 text-gold" />
+        <span className="text-sm font-medium">Today's Attendance</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="flex-1 space-y-1 text-sm text-white/60">
+          <p>Punch In: <span className="font-medium text-white">{todayRecord?.PunchIn ? new Date(todayRecord.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
+          <p>Punch Out: <span className="font-medium text-white">{todayRecord?.PunchOut ? new Date(todayRecord.PunchOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
+        </div>
+
+        {!todayRecord?.PunchIn ? (
+          <Button variant="gold" onClick={handlePunchIn} disabled={punchIn.isPending}>
+            <LogInIcon className="size-4" /> Punch In
+          </Button>
+        ) : !todayRecord?.PunchOut ? (
+          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={handlePunchOut} disabled={punchOut.isPending}>
+            <LogOut className="size-4" /> Punch Out
+          </Button>
+        ) : (
+          <span className="flex items-center gap-1.5 text-sm text-emerald-300">
+            <CheckCircle2 className="size-4" /> Day complete
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ onLogout }: { onLogout: () => void }) {
+  const { data: student } = usePortalMe(true);
+  const { data: classes } = usePortalClasses(true);
+  const { data: attendance } = usePortalAttendance(true);
+  const { data: notices } = useNotices();
+
+  if (!student) return null;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mx-auto w-full max-w-3xl space-y-6">
       <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gold/15 text-gold">
@@ -123,43 +277,60 @@ function Dashboard({ student }: { student: StudentRecord }) {
           </div>
           <div>
             <h1 className="font-display text-2xl font-bold text-white">{student.studentName}</h1>
-            <p className="text-sm text-white/60">
-              {student.className} &middot; Student ID {student.studentId} &middot; Parent: {student.parentName}
-            </p>
+            <p className="text-sm text-white/60">Class {student.className} &middot; Student ID {student.studentId}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-          <div className="flex items-center gap-2.5 text-white/70">
-            <CalendarCheck className="size-5 text-gold" />
-            <span className="text-sm font-medium">Attendance</span>
-          </div>
-          <p className="mt-3 font-display text-3xl font-bold text-white">
-            {student.attendancePercent ? `${student.attendancePercent}%` : 'Not available yet'}
-          </p>
-          {student.attendancePercent && (
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gold" style={{ width: `${Math.min(Number(student.attendancePercent), 100)}%` }} />
-            </div>
-          )}
-        </div>
+      <PunchCard />
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-          <div className="flex items-center gap-2.5 text-white/70">
-            <Wallet className="size-5 text-gold" />
-            <span className="text-sm font-medium">Fee Status</span>
-          </div>
-          <p
-            className={cn(
-              'mt-3 inline-flex rounded-full px-3 py-1 font-display text-lg font-semibold',
-              student.feeStatus?.toLowerCase().includes('due') ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'
-            )}
-          >
-            {student.feeStatus || 'Not available yet'}
-          </p>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 text-white/70">
+          <Video className="size-5 text-gold" />
+          <span className="text-sm font-medium">Classes</span>
         </div>
+        {classes && classes.length > 0 ? (
+          <ul className="mt-4 space-y-3">
+            {classes.map((c) => (
+              <li key={c.Id} className="flex items-center justify-between gap-4 rounded-xl bg-white/5 p-4">
+                <div>
+                  <p className="font-display text-sm font-semibold text-white">{c.Title}</p>
+                  <p className="text-xs text-white/60">{c.Subject} &middot; {c.Type}</p>
+                </div>
+                <Button asChild size="sm" variant="gold">
+                  <a href={c.Url} target="_blank" rel="noreferrer">
+                    <PlayCircle className="size-4" /> {c.Type === 'Live' ? 'Join Live' : 'Watch'}
+                  </a>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-white/50">No classes posted yet — check back soon.</p>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 text-white/70">
+          <Clock className="size-5 text-gold" />
+          <span className="text-sm font-medium">Attendance History</span>
+        </div>
+        {attendance && attendance.length > 0 ? (
+          <ul className="mt-4 space-y-2 text-sm">
+            {attendance.slice(0, 10).map((r) => (
+              <li key={r.Id} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5 text-white/70">
+                <span>{new Date(r.Date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                <span>
+                  {r.PunchIn ? new Date(r.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                  {' – '}
+                  {r.PunchOut ? new Date(r.PunchOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-white/50">No attendance recorded yet.</p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
@@ -180,41 +351,59 @@ function Dashboard({ student }: { student: StudentRecord }) {
           <p className="mt-3 text-sm text-white/50">No notices right now.</p>
         )}
       </div>
+
+      <div className="flex justify-center pt-2">
+        <Button variant="glass" onClick={onLogout}>
+          <LogOut className="size-4" /> Log Out
+        </Button>
+      </div>
     </motion.div>
   );
 }
 
 export function StudentPortalPage() {
-  const [student, setStudent] = useState<StudentRecord | null>(null);
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setStudent(JSON.parse(saved));
-      } catch {
-        sessionStorage.removeItem(STORAGE_KEY);
-      }
-    }
-  }, []);
-
-  const handleLogin = (s: StudentRecord) => {
-    setStudent(s);
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-    toast.success(`Welcome, ${s.studentName}!`);
-  };
+  const [loggedIn, setLoggedIn] = useState(useIsStudentLoggedIn());
+  const logout = usePortalLogout();
 
   const handleLogout = () => {
-    setStudent(null);
-    sessionStorage.removeItem(STORAGE_KEY);
+    logout();
+    setLoggedIn(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#16305C] to-[#060D1F]">
       <title>Student Portal | Target Classes</title>
-      <PortalHeader onLogout={student ? handleLogout : undefined} />
+      <PortalHeader onLogout={loggedIn ? handleLogout : undefined} />
       <div className="section-container flex min-h-[80vh] items-center justify-center pb-16">
-        {student ? <Dashboard student={student} /> : <LoginCard onSuccess={handleLogin} />}
+        {loggedIn ? (
+          <Dashboard onLogout={handleLogout} />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mx-auto w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10"
+          >
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-gold/15 text-gold">
+              <GraduationCap className="size-7" />
+            </div>
+            <h1 className="mt-5 text-center font-display text-2xl font-bold text-white sm:text-3xl">Student Portal</h1>
+            <p className="mt-2 text-center text-sm text-white/60">Log in to view classes, attendance, and notices — or apply for a new account.</p>
+
+            <Tabs defaultValue="login" className="mt-8">
+              <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                <TabsTrigger value="login">Log In</TabsTrigger>
+                <TabsTrigger value="apply">Apply</TabsTrigger>
+              </TabsList>
+              <TabsContent value="login" className="mt-6">
+                <LoginForm onSuccess={() => setLoggedIn(true)} />
+              </TabsContent>
+              <TabsContent value="apply" className="mt-6">
+                <ApplyForm />
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        )}
       </div>
     </div>
   );

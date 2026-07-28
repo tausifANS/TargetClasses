@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PageHero } from '@/components/layout/page-hero';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_VIDEOS, type GalleryItem } from '@/data/gallery';
+import { useGalleryItems } from '@/hooks/use-content';
 
 function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (item: GalleryItem) => void }) {
   return (
@@ -37,6 +38,20 @@ function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (ite
 
 export function GalleryPage() {
   const [active, setActive] = useState<GalleryItem | null>(null);
+  const { data: uploaded } = useGalleryItems();
+
+  const allItems = useMemo<GalleryItem[]>(() => {
+    const fromAdmin: GalleryItem[] = (uploaded ?? []).map((row) => ({
+      id: row.Id,
+      category: row.Category || 'classroom',
+      src: row.ImageUrl,
+      srcMd: row.ImageUrl,
+      thumb: row.ImageUrl,
+      caption: row.Caption || 'Target Classes',
+    }));
+    // Newest admin uploads first, static launch photos after.
+    return [...fromAdmin, ...GALLERY_ITEMS];
+  }, [uploaded]);
 
   return (
     <>
@@ -62,7 +77,7 @@ export function GalleryPage() {
             {GALLERY_CATEGORIES.map((c) => (
               <TabsContent key={c.value} value={c.value}>
                 <GalleryGrid
-                  items={c.value === 'all' ? GALLERY_ITEMS : GALLERY_ITEMS.filter((i) => i.category === c.value)}
+                  items={c.value === 'all' ? allItems : allItems.filter((i) => i.category === c.value)}
                   onSelect={setActive}
                 />
               </TabsContent>

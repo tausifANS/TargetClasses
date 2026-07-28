@@ -11,3 +11,5 @@ export const getTestimonials = publicList('Testimonials');
 export const getNotices = publicList('Notices');
 export const getEvents = publicList('Events');
 export const getToppers = publicList('Toppers');
+export const getPosts = publicList('Posts');
+export const getGalleryItems = publicList('GalleryItems');

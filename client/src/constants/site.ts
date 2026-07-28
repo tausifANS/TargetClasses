@@ -94,4 +94,9 @@ export const TEACHERS: Teacher[] = [
   },
 ];
 
-export const CLASSES = ['Nursery', 'LKG', 'UKG'] as const;
+// Primary program: coaching for Class 9th–12th (Physics/Chemistry/Maths/Biology/English).
+export const COACHING_CLASSES = ['9th', '10th', '11th', '12th'] as const;
+// Secondary program: early learners.
+export const EARLY_LEARNER_CLASSES = ['Nursery', 'LKG', 'UKG'] as const;
+// All classes offered — used by the Admission form's class selector.
+export const CLASSES = [...COACHING_CLASSES, ...EARLY_LEARNER_CLASSES] as const;

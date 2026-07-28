@@ -1,6 +1,6 @@
 export interface GalleryItem {
   id: string;
-  category: 'classroom' | 'events' | 'topper';
+  category: string;
   src: string;
   srcMd: string;
   thumb: string;

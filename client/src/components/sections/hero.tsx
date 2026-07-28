@@ -30,12 +30,13 @@ export function Hero() {
           </span>
 
           <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] text-white sm:text-5xl lg:text-6xl">
-            Where Every Child's <span className="text-[#E8C766]">Potential</span> Hits Its Target
+            Expert Coaching for <span className="text-[#E8C766]">Class 9th–12th</span> That Hits Its Target
           </h1>
 
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/75">
-            {SITE.name} nurtures young learners from Nursery through UKG with dedicated faculty,
-            personalized attention, and a warm, modern learning environment built for real results.
+            {SITE.name} prepares students for board exams with focused Physics, Chemistry, Maths &
+            Biology coaching from experienced faculty — plus a nurturing Nursery–UKG program for our
+            youngest learners.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-4">
