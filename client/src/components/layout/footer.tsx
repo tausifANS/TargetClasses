@@ -11,6 +11,16 @@ function YoutubeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+function InstagramIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
+      <circle cx="12" cy="12" r="4.6" />
+      <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -18,21 +28,32 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-background">
       <div className="section-container grid grid-cols-1 gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2 lg:col-span-1">
-          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-11 w-auto dark:hidden" />
-          <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-11 w-auto dark:block" />
+          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-20 w-auto dark:hidden" />
+          <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-20 w-auto dark:block" />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">
             Established {SITE.established}, {SITE.name} has been guiding young learners in Lar Town, Deoria
             with dedicated faculty and a premium learning environment.
           </p>
-          <a
-            href={SITE.youtube}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
-            aria-label="Target Classes on YouTube"
-          >
-            <YoutubeIcon className="size-5" />
-          </a>
+          <div className="mt-5 flex items-center gap-3">
+            <a
+              href={SITE.youtube}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
+              aria-label="Target Classes on YouTube"
+            >
+              <YoutubeIcon className="size-5" />
+            </a>
+            <a
+              href={SITE.instagram}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex size-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
+              aria-label="Target Classes on Instagram"
+            >
+              <InstagramIcon className="size-5" />
+            </a>
+          </div>
         </div>
 
         <FooterColumn title="Institute" links={FOOTER_LINKS.institute} />

@@ -13,3 +13,4 @@ export const getEvents = publicList('Events');
 export const getToppers = publicList('Toppers');
 export const getPosts = publicList('Posts');
 export const getGalleryItems = publicList('GalleryItems');
+export const getTeachers = publicList('Teachers');

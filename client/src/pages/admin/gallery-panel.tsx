@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminList, useAdminCreate, useAdminDelete } from '@/hooks/use-admin';
-import { apiErrorMessage } from '@/lib/api';
+import { apiErrorMessage, resolveMediaUrl } from '@/lib/api';
 import { matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
 
@@ -89,7 +89,7 @@ export function GalleryPanel() {
       <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {[...filtered].reverse().map((row) => (
           <div key={row.Id} className="group relative overflow-hidden rounded-xl border border-border">
-            <img src={row.ImageUrl} alt={row.Caption || row.Category} className="aspect-square w-full object-cover" />
+            <img src={resolveMediaUrl(row.ImageUrl)} alt={row.Caption || row.Category} className="aspect-square w-full object-cover" />
             <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/70 via-black/0 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
               <Button size="icon" variant="ghost" className="ml-auto size-8 text-white hover:bg-white/20 hover:text-white" onClick={() => handleDelete(row.Id)}>
                 <Trash2 className="size-4" />

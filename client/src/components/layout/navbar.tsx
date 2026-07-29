@@ -33,7 +33,7 @@ export function Navbar() {
           <img
             src={useWhiteText ? '/brand/logo-horizontal-dark.svg' : '/brand/logo-horizontal-light.svg'}
             alt="Target Classes"
-            className="h-10 w-auto sm:h-11"
+            className={cn('h-20 w-auto sm:h-24', transparentMode && 'drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]')}
           />
         </Link>
 
@@ -100,9 +100,9 @@ export function Navbar() {
                     >
                       <div className="mb-8 flex items-center justify-between">
                         <Dialog.Title asChild>
-                          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-9 w-auto dark:hidden" />
+                          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-12 w-auto dark:hidden" />
                         </Dialog.Title>
-                        <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-9 w-auto dark:block" />
+                        <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-12 w-auto dark:block" />
                         <Dialog.Close asChild>
                           <Button variant="ghost" size="icon" aria-label="Close menu">
                             <X className="size-5" />

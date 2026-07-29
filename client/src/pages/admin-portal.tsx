@@ -12,6 +12,7 @@ import { ContentPanel } from '@/pages/admin/content-panel';
 import { ClassesPanel } from '@/pages/admin/classes-panel';
 import { PostsPanel } from '@/pages/admin/posts-panel';
 import { GalleryPanel } from '@/pages/admin/gallery-panel';
+import { TeachersPanel } from '@/pages/admin/teachers-panel';
 
 const SECTIONS = [
   { value: 'inbox', label: 'Inbox' },
@@ -22,6 +23,7 @@ const SECTIONS = [
   { value: 'classes', label: 'Classes' },
   { value: 'posts', label: 'Posts' },
   { value: 'gallery', label: 'Gallery' },
+  { value: 'teachers', label: 'Teachers' },
 ] as const;
 
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
@@ -31,19 +33,23 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     <div className="min-h-screen bg-background">
       <title>Admin Dashboard | Target Classes</title>
       <header className="border-b border-border bg-card">
-        <div className="section-container flex items-center justify-between py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="section-container flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <LayoutDashboard className="size-5" />
             </div>
-            <span className="font-display font-semibold">Target Classes Admin</span>
+            <span className="truncate font-display font-semibold">
+              <span className="hidden sm:inline">Target Classes </span>Admin
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button asChild variant="ghost" size="sm">
-              <Link to="/"><ArrowLeft className="size-4" /> Website</Link>
+              <Link to="/">
+                <ArrowLeft className="size-4" /> <span className="hidden sm:inline">Website</span>
+              </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={onLogout}>
-              <LogOut className="size-4" /> Log Out
+              <LogOut className="size-4" /> <span className="hidden sm:inline">Log Out</span>
             </Button>
           </div>
         </div>
@@ -68,6 +74,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <TabsContent value="classes"><ClassesPanel /></TabsContent>
             <TabsContent value="posts"><PostsPanel /></TabsContent>
             <TabsContent value="gallery"><GalleryPanel /></TabsContent>
+            <TabsContent value="teachers"><TeachersPanel /></TabsContent>
           </div>
         </Tabs>
       </div>

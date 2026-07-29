@@ -11,9 +11,10 @@ dist/
 build/
 *.tsbuildinfo
 
-# Server runtime
-server/uploads/*
-!server/uploads/.gitkeep
+# Server runtime — uploads ARE tracked (see below): Vercel's filesystem is
+# read-only, so admin-uploaded photos only survive at all if they're bundled
+# at deploy time. New uploads after deploying still won't persist — see
+# server/src/utils/imageStorage.js.
 
 # Logs
 *.log

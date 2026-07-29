@@ -7,6 +7,7 @@ import * as inboxController from '../controllers/admin/inbox.controller.js';
 import * as portalApplicationsController from '../controllers/admin/portalApplications.controller.js';
 import * as galleryController from '../controllers/admin/gallery.controller.js';
 import * as postsController from '../controllers/admin/posts.controller.js';
+import * as teachersController from '../controllers/admin/teachers.controller.js';
 import * as attendanceController from '../controllers/admin/attendance.controller.js';
 import * as studentsController from '../controllers/admin/students.controller.js';
 import { makeCrudController } from '../controllers/admin/crud.factory.js';
@@ -83,5 +84,11 @@ router.get('/gallery', galleryController.list);
 router.post('/gallery', uploadImage, galleryController.upload);
 router.patch('/gallery/:id', galleryController.update);
 router.delete('/gallery/:id', galleryController.remove);
+
+// Teachers — faculty team shown on the public site, with photo upload.
+router.get('/teachers', teachersController.list);
+router.post('/teachers', uploadImage, teachersController.create);
+router.patch('/teachers/:id', uploadImage, teachersController.update);
+router.delete('/teachers/:id', teachersController.remove);
 
 export default router;

@@ -1,15 +1,17 @@
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { Counter } from '@/components/ui/counter';
-import { SITE, TEACHERS, CLASSES } from '@/constants/site';
-
-const facts = [
-  { value: new Date().getFullYear() - SITE.established, suffix: '+', label: 'Years of Excellence' },
-  { value: TEACHERS.length, suffix: '', label: 'Expert Faculty Members' },
-  { value: CLASSES.length, suffix: '', label: 'Programs Offered' },
-];
+import { SITE, CLASSES } from '@/constants/site';
+import { useTeachers } from '@/hooks/use-content';
 
 export function QuickFacts() {
+  const { data: teachers } = useTeachers();
+  const facts = [
+    { value: new Date().getFullYear() - SITE.established, suffix: '+', label: 'Years of Excellence' },
+    { value: teachers?.length ?? 0, suffix: '', label: 'Expert Faculty Members' },
+    { value: CLASSES.length, suffix: '', label: 'Programs Offered' },
+  ];
+
   return (
     <section className="relative -mt-16 z-20">
       <div className="section-container">

@@ -48,6 +48,16 @@ export interface GalleryItemRow {
   Caption?: string;
 }
 
+export interface TeacherRow {
+  Id: string;
+  SubmittedAt: string;
+  Name: string;
+  Position: string;
+  Subjects: string;
+  PhotoUrl?: string;
+  DisplayOrder?: string | number;
+}
+
 async function fetchContent<T>(sheet: string): Promise<T[]> {
   const res = await api.get(`/content/${sheet}`);
   return res.data.data ?? [];
@@ -72,3 +82,4 @@ export const useEvents = () => useContentQuery<EventRow>('events', 'events');
 export const useToppers = () => useContentQuery<TopperRow>('toppers', 'toppers');
 export const usePosts = () => useContentQuery<PostRow>('posts', 'posts');
 export const useGalleryItems = () => useContentQuery<GalleryItemRow>('gallery-items', 'gallery-items');
+export const useTeachers = () => useContentQuery<TeacherRow>('teachers', 'teachers');

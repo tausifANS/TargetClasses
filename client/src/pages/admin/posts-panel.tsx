@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
-import { apiErrorMessage } from '@/lib/api';
+import { apiErrorMessage, resolveMediaUrl } from '@/lib/api';
 import { matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
 
@@ -111,7 +111,7 @@ export function PostsPanel() {
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {[...filtered].reverse().map((row) => (
           <div key={row.Id} className="overflow-hidden rounded-xl border border-border bg-card">
-            {row.ImageUrl && <img src={row.ImageUrl} alt={row.Title} className="aspect-video w-full object-cover" />}
+            {row.ImageUrl && <img src={resolveMediaUrl(row.ImageUrl)} alt={row.Title} className="aspect-video w-full object-cover" />}
             <div className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-display font-semibold">{row.Title}</p>

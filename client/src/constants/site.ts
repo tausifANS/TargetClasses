@@ -3,13 +3,14 @@ export const SITE = {
   tagline: 'Aim High. Achieve More.',
   established: 2019,
   director: 'Naushad Ansari',
-  phone: '+91 73882 71963',
-  phoneHref: 'tel:+917388271963',
-  whatsapp: '+91 73882 71963',
-  whatsappHref: 'https://wa.me/917388271963',
+  phone: '+91 72339 81206',
+  phoneHref: 'tel:+917233981206',
+  whatsapp: '+91 72339 81206',
+  whatsappHref: 'https://wa.me/917233981206',
   email: 'tausif5310ans@gmail.com',
   address: 'Lar Town, Near Thana, Deoria, Uttar Pradesh',
   youtube: 'https://youtube.com/@target786?si=0Jn3DJf4g2YXgBes',
+  instagram: 'https://www.instagram.com/targetscienceacademy?igsh=MXZseGNtNDU4cnU4cQ==',
   mapEmbedQuery: 'Lar Town Near Thana Deoria Uttar Pradesh',
 } as const;
 

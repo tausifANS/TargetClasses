@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Megaphone } from 'lucide-react';
 import { usePosts } from '@/hooks/use-content';
+import { resolveMediaUrl } from '@/lib/api';
 
 const truthy = (v: unknown) => v === true || String(v).toUpperCase() === 'TRUE';
 
@@ -28,7 +29,7 @@ export function HighlightedPosts() {
             className="overflow-hidden rounded-2xl border-2 border-gold/40 bg-card shadow-lg shadow-gold/10"
           >
             {post.ImageUrl ? (
-              <img src={post.ImageUrl} alt={post.Title} className="aspect-video w-full object-cover" />
+              <img src={resolveMediaUrl(post.ImageUrl)} alt={post.Title} className="aspect-video w-full object-cover" />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center bg-gold/10 text-gold">
                 <Megaphone className="size-10" />

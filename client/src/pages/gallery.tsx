@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_VIDEOS, type GalleryItem } from '@/data/gallery';
 import { useGalleryItems } from '@/hooks/use-content';
+import { resolveMediaUrl } from '@/lib/api';
 
 function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (item: GalleryItem) => void }) {
   return (
@@ -41,14 +42,17 @@ export function GalleryPage() {
   const { data: uploaded } = useGalleryItems();
 
   const allItems = useMemo<GalleryItem[]>(() => {
-    const fromAdmin: GalleryItem[] = (uploaded ?? []).map((row) => ({
-      id: row.Id,
-      category: row.Category || 'classroom',
-      src: row.ImageUrl,
-      srcMd: row.ImageUrl,
-      thumb: row.ImageUrl,
-      caption: row.Caption || 'Target Classes',
-    }));
+    const fromAdmin: GalleryItem[] = (uploaded ?? []).map((row) => {
+      const url = resolveMediaUrl(row.ImageUrl) ?? row.ImageUrl;
+      return {
+        id: row.Id,
+        category: row.Category || 'classroom',
+        src: url,
+        srcMd: url,
+        thumb: url,
+        caption: row.Caption || 'Target Classes',
+      };
+    });
     // Newest admin uploads first, static launch photos after.
     return [...fromAdmin, ...GALLERY_ITEMS];
   }, [uploaded]);

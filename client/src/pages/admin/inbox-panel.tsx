@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Inbox } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { INBOX_SHEETS, useInboxList, useInboxUpdateStatus } from '@/hooks/use-admin';
 import { apiErrorMessage } from '@/lib/api';
@@ -105,7 +104,7 @@ export function InboxPanel() {
           </TabsContent>
         ))}
       </Tabs>
-      <Badge variant="muted" className="mt-4">Tip: statuses are just labels for your own tracking — nothing else depends on them.</Badge>
+      <p className="mt-4 text-sm text-muted-foreground">Tip: statuses are just labels for your own tracking — nothing else depends on them.</p>
     </div>
   );
 }

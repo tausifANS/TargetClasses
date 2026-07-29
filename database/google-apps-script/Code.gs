@@ -49,6 +49,10 @@ const SHEET_CONFIG = {
 
   // Admin-uploaded gallery photos (in addition to the static launch gallery).
   GalleryItems: ['Id', 'SubmittedAt', 'Category', 'ImageUrl', 'Caption', 'Published'],
+
+  // Faculty team shown on the public Faculty page + homepage preview, fully
+  // managed from the Admin Portal (add/edit/delete, with photo upload).
+  Teachers: ['Id', 'SubmittedAt', 'Name', 'Position', 'Subjects', 'PhotoUrl', 'DisplayOrder', 'Published'],
 };
 
 function ensureSheet_(name) {
