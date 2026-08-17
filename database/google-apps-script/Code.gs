@@ -63,8 +63,11 @@ const SHEET_CONFIG = {
   // Results — exam results uploaded by admin.
   Results: ['Id', 'SubmittedAt', 'ClassName', 'Subject', 'ExamName', 'ExamDate', 'Description', 'PdfUrl', 'Published'],
 
-  // Comments — blog/post comments from students.
-  Comments: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'StudentId', 'StudentName', 'Text', 'Published'],
+  // Public website user accounts — visitors who register to like/comment.
+  UserAccounts: ['Id', 'SubmittedAt', 'Name', 'Email', 'PasswordHash', 'Status'],
+
+  // Comments — blog/post comments from users.
+  Comments: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'UserId', 'UserName', 'Text', 'Published'],
 
   // Likes — gallery/post like tracking (VisitorHash = IP-based unique hash).
   Likes: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'VisitorHash'],

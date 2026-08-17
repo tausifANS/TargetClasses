@@ -1,159 +1,176 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Send } from 'lucide-react';
+import { Heart, MessageCircle, Send, User, LogIn } from 'lucide-react';
 import { PageHero } from '@/components/layout/page-hero';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_VIDEOS, type GalleryItem } from '@/data/gallery';
 import { useGalleryItems } from '@/hooks/use-content';
-import { resolveMediaUrl, api } from '@/lib/api';
-import { useIsStudentLoggedIn } from '@/hooks/use-portal';
+import { resolveMediaUrl } from '@/lib/api';
+import { useIsUserLoggedIn, useUserLogin, useUserSignup } from '@/hooks/use-user-auth';
+import { useGalleryInteractions } from '@/hooks/use-gallery-interactions';
+import { toast } from 'sonner';
 
-interface GalleryComment {
-  id: number;
-  name: string;
-  text: string;
-  created_at: string;
-}
+// ---- Auth Dialog ----
 
-function GalleryLikeComment({ imageId }: { imageId: string | number }) {
-  const loggedIn = useIsStudentLoggedIn();
-  const [likes, setLikes] = useState(0);
-  const [liked, setLiked] = useState(false);
-  const [comments, setComments] = useState<GalleryComment[]>([]);
-  const [commentText, setCommentText] = useState('');
-  const [commentName, setCommentName] = useState('');
-  const [loading, setLoading] = useState(true);
+function GalleryAuthDialog({ open, onOpenChange, onSuccess }: { open: boolean; onOpenChange: (v: boolean) => void; onSuccess: () => void }) {
+  const [tab, setTab] = useState<'login' | 'signup'>('login');
+  const loginMut = useUserLogin();
+  const signupMut = useUserSignup();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const [likesRes, commentsRes] = await Promise.all([
-          api.get(`/comments/gallery/${imageId}/likes`),
-          api.get(`/comments/gallery/${imageId}`),
-        ]);
-        if (cancelled) return;
-        setLikes(likesRes.data?.count ?? 0);
-        setLiked(likesRes.data?.liked ?? false);
-        setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
-      } catch {
-        // silently ignore
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [imageId]);
-
-  const toggleLike = async () => {
-    if (!loggedIn) return;
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
     try {
-      const res = await api.post(`/comments/gallery/${imageId}/likes`);
-      setLikes(res.data?.count ?? likes);
-      setLiked(res.data?.liked ?? !liked);
-    } catch { /* ignore */ }
+      await loginMut.mutateAsync({ email: String(fd.get('email')), password: String(fd.get('password')) });
+      toast.success('Logged in!');
+      onSuccess();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Login failed');
+    }
   };
 
-  const postComment = async () => {
-    if (!loggedIn || !commentText.trim()) return;
-    const name = commentName.trim() || 'Student';
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
     try {
-      const res = await api.post(`/comments/gallery/${imageId}`, { name, text: commentText.trim() });
-      const newComment = res.data;
-      if (newComment) setComments((prev) => [...prev, newComment]);
-      setCommentText('');
-    } catch { /* ignore */ }
+      await signupMut.mutateAsync({ name: String(fd.get('name')), email: String(fd.get('email')), password: String(fd.get('password')) });
+      toast.success('Account created! You are now logged in.');
+      onSuccess();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Signup failed');
+    }
   };
 
   return (
-    <div className="mt-4 space-y-4">
-      {/* Like button */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={toggleLike}
-          className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-          style={{
-            background: liked ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.12)',
-          }}
-        >
-          <Heart
-            size={18}
-            className={liked ? 'fill-red-500 text-red-500' : 'text-white/60'}
-          />
-          <span className="text-white">{likes}</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm border-border bg-card p-0">
+        <DialogTitle className="sr-only">Login or Sign Up</DialogTitle>
+        <div className="p-6">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'login' | 'signup')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Log In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login" className="mt-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input id="login-email" name="email" type="email" required placeholder="your@email.com" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-pass">Password</Label>
+                  <Input id="login-pass" name="password" type="password" required />
+                </div>
+                <Button type="submit" variant="gold" className="w-full" disabled={loginMut.isPending}>
+                  <LogIn className="size-4" /> Log In
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="signup" className="mt-4">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Input id="signup-name" name="name" required placeholder="Your name" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input id="signup-email" name="email" type="email" required placeholder="your@email.com" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="signup-pass">Password</Label>
+                  <Input id="signup-pass" name="password" type="password" required minLength={6} />
+                </div>
+                <Button type="submit" variant="gold" className="w-full" disabled={signupMut.isPending}>
+                  <User className="size-4" /> Create Account
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---- Like & Comment Section ----
+
+function GalleryLikeComment({ imageId }: { imageId: string }) {
+  const { comments, likes, toggleLike, postComment } = useGalleryInteractions(imageId, true);
+  const [commentText, setCommentText] = useState('');
+  const [showAuth, setShowAuth] = useState(false);
+  const isLoggedIn = useIsUserLoggedIn();
+
+  const handleLike = async () => {
+    if (!isLoggedIn) { setShowAuth(true); return; }
+    try { await toggleLike(); } catch { setShowAuth(true); }
+  };
+
+  const handleComment = async () => {
+    if (!isLoggedIn) { setShowAuth(true); return; }
+    if (!commentText.trim()) return;
+    try {
+      await postComment(commentText.trim());
+      setCommentText('');
+      toast.success('Comment posted!');
+    } catch { toast.error('Failed to post comment'); }
+  };
+
+  return (
+    <div className="mt-4 border-t border-white/10 pt-4">
+      <div className="flex items-center gap-5">
+        <button onClick={handleLike} className={`flex items-center gap-1.5 text-sm transition-colors ${likes.liked ? 'text-red-400' : 'text-white/70 hover:text-red-400'}`}>
+          <Heart className={`size-5 ${likes.liked ? 'fill-current' : ''}`} /> {likes.count}
         </button>
-        <span className="flex items-center gap-2 text-sm text-white/50">
-          <MessageCircle size={16} />
-          {comments.length}
+        <span className="flex items-center gap-1.5 text-sm text-white/70">
+          <MessageCircle className="size-5" /> {comments.length}
         </span>
       </div>
 
-      {/* Comments list */}
-      <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-        {!loading && comments.length === 0 && (
-          <p className="text-sm text-white/40 italic">No comments yet. Be the first!</p>
-        )}
-        {comments.map((c) => (
-          <div
-            key={c.id}
-            className="rounded-xl px-4 py-3"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gold">{c.name}</span>
-              <span className="text-xs text-white/30">
-                {new Date(c.created_at).toLocaleDateString()}
-              </span>
+      {comments.length > 0 && (
+        <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
+          {comments.map((c) => (
+            <div key={c.Id} className="rounded-lg bg-white/5 p-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-semibold text-gold">{c.UserName}</span>
+                <span className="text-white/40">{new Date(c.SubmittedAt).toLocaleDateString('en-IN')}</span>
+              </div>
+              <p className="mt-1 text-sm text-white/90">{c.Text}</p>
             </div>
-            <p className="mt-1 text-sm text-white/80">{c.text}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Comment input */}
-      {loggedIn ? (
-        <div className="space-y-2">
-          <input
-            type="text"
-            placeholder="Your name"
-            value={commentName}
-            onChange={(e) => setCommentName(e.target.value)}
-            className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-gold/50"
-            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+      {isLoggedIn ? (
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
+            placeholder="Write a comment..."
+            className="border-white/15 bg-white/5 text-white placeholder:text-white/40"
           />
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Write a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && postComment()}
-              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-gold/50"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-            />
-            <button
-              type="button"
-              onClick={postComment}
-              disabled={!commentText.trim()}
-              className="flex items-center justify-center rounded-xl px-4 py-2.5 text-white transition-colors hover:bg-gold/20 disabled:opacity-30"
-              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}
-            >
-              <Send size={16} />
-            </button>
-          </div>
+          <Button size="icon" variant="gold" onClick={handleComment} disabled={!commentText.trim()}>
+            <Send className="size-4" />
+          </Button>
         </div>
       ) : (
-        <p className="text-center text-sm text-white/40">
-          Log in as a student to like and comment
-        </p>
+        <button onClick={() => setShowAuth(true)} className="mt-3 text-xs text-gold hover:underline">
+          Log in to like and comment
+        </button>
       )}
+
+      <GalleryAuthDialog open={showAuth} onOpenChange={setShowAuth} onSuccess={() => {}} />
     </div>
   );
 }
+
+// ---- Gallery Grid ----
 
 function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (item: GalleryItem) => void }) {
   return (
@@ -185,6 +202,8 @@ function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (ite
   );
 }
 
+// ---- Main Gallery Page ----
+
 export function GalleryPage() {
   const [active, setActive] = useState<GalleryItem | null>(null);
   const { data: uploaded } = useGalleryItems();
@@ -201,7 +220,6 @@ export function GalleryPage() {
         caption: row.Caption || 'Target Classes',
       };
     });
-    // Newest admin uploads first, static launch photos after.
     return [...fromAdmin, ...GALLERY_ITEMS];
   }, [uploaded]);
 
@@ -263,12 +281,12 @@ export function GalleryPage() {
       </section>
 
       <Dialog open={!!active} onOpenChange={(open) => !open && setActive(null)}>
-        <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+        <DialogContent className="max-w-3xl border-none bg-[#0c1a30] p-6 shadow-none">
           <DialogTitle className="sr-only">{active?.caption ?? 'Gallery image'}</DialogTitle>
           {active && (
             <div>
-              <img src={active.src} alt={active.caption} className="max-h-[80vh] w-full rounded-2xl object-contain" />
-              <p className="pt-4 text-center font-display text-base font-semibold text-white">{active.caption}</p>
+              <img src={active.src} alt={active.caption} className="max-h-[60vh] w-full rounded-2xl object-contain" />
+              <p className="pt-3 text-center font-display text-base font-semibold text-white">{active.caption}</p>
               <GalleryLikeComment imageId={active.id} />
             </div>
           )}

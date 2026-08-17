@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiError.js';
 import * as sheetsService from '../services/sheets.service.js';
 import { v4 as uuid } from 'uuid';
 import crypto from 'crypto';
+import { authenticate } from '../middlewares/auth.js';
 
 const router = Router();
 
@@ -19,17 +20,17 @@ router.get('/:targetType/:targetId', asyncHandler(async (req, res) => {
   res.json({ success: true, data: filtered });
 }));
 
-// POST a comment
-router.post('/:targetType/:targetId', asyncHandler(async (req, res) => {
-  if (!req.body.name || !req.body.text) {
-    throw ApiError.badRequest('Name and text are required');
+// POST a comment (requires login)
+router.post('/:targetType/:targetId', authenticate, asyncHandler(async (req, res) => {
+  if (!req.body.text) {
+    throw ApiError.badRequest('Comment text is required');
   }
 
   await sheetsService.appendRow('Comments', {
     TargetType: req.params.targetType,
     TargetId: req.params.targetId,
-    StudentId: req.body.studentId || '',
-    StudentName: req.body.name,
+    UserId: req.user.sub || '',
+    UserName: req.user.name || 'Anonymous',
     Text: req.body.text,
     Published: true,
   });

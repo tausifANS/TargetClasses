@@ -8,6 +8,7 @@ import questionsRoutes from './questions.routes.js';
 import notesRoutes from './notes.routes.js';
 import resultsRoutes from './results.routes.js';
 import commentsRoutes from './comments.routes.js';
+import userAuthRoutes from './userAuth.routes.js';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/questions', questionsRoutes);
 router.use('/notes', notesRoutes);
 router.use('/results', resultsRoutes);
 router.use('/comments', commentsRoutes);
+router.use('/user-auth', userAuthRoutes);
 
 // Phase 2+ mount points (students, teachers, exams, fees, ...) will be added here
 // as each module is built against Supabase once it's reachable again.

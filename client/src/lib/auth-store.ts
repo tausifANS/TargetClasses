@@ -1,8 +1,9 @@
-export type AuthRole = 'admin' | 'student';
+export type AuthRole = 'admin' | 'student' | 'user';
 
 const KEYS: Record<AuthRole, string> = {
   admin: 'tc_admin_token',
   student: 'tc_student_token',
+  user: 'tc_user_token',
 };
 
 export function getToken(role: AuthRole) {
