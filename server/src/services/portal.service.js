@@ -83,7 +83,7 @@ export async function getTodayAttendance(studentId) {
   return rows.find((r) => r.StudentId === studentId && r.Date === today) || null;
 }
 
-export async function punchIn(studentId) {
+export async function punchIn(studentId, photo) {
   const existing = await getTodayAttendance(studentId);
   if (existing) return { alreadyPunched: true, record: existing };
 
@@ -92,6 +92,7 @@ export async function punchIn(studentId) {
     Date: todayDateOnly(),
     PunchIn: new Date().toISOString(),
     PunchOut: '',
+    PhotoUrl: photo || '',
   });
   return { alreadyPunched: false, record };
 }

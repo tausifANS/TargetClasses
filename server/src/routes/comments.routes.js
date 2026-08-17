@@ -7,51 +7,60 @@ import crypto from 'crypto';
 
 const router = Router();
 
-router.get('/:resourceType/:resourceId', asyncHandler(async (req, res) => {
+// GET comments for a post
+router.get('/:targetType/:targetId', asyncHandler(async (req, res) => {
   const all = await sheetsService.listRows('Comments');
   const filtered = all.filter(
     (c) =>
-      c.ResourceType === req.params.resourceType &&
-      c.ResourceId === req.params.resourceId &&
+      c.TargetType === req.params.targetType &&
+      c.TargetId === req.params.targetId &&
       c.Published !== false
   );
   res.json({ success: true, data: filtered });
 }));
 
-router.post('/:resourceType/:resourceId', asyncHandler(async (req, res) => {
-  if (!req.body.name || !req.body.comment) {
-    throw ApiError.badRequest('Name and comment are required');
+// POST a comment
+router.post('/:targetType/:targetId', asyncHandler(async (req, res) => {
+  if (!req.body.name || !req.body.text) {
+    throw ApiError.badRequest('Name and text are required');
   }
 
-  const data = await sheetsService.appendRow('Comments', {
-    Id: uuid(),
-    SubmittedAt: new Date().toISOString(),
-    ResourceType: req.params.resourceType,
-    ResourceId: req.params.resourceId,
-    Name: req.body.name,
-    Comment: req.body.comment,
+  await sheetsService.appendRow('Comments', {
+    TargetType: req.params.targetType,
+    TargetId: req.params.targetId,
+    StudentId: req.body.studentId || '',
+    StudentName: req.body.name,
+    Text: req.body.text,
     Published: true,
   });
-  res.status(201).json({ success: true, data });
+  res.status(201).json({ success: true });
 }));
 
-router.get('/:resourceType/:resourceId/likes', asyncHandler(async (req, res) => {
+// DELETE a comment (admin only)
+router.delete('/:id', asyncHandler(async (req, res) => {
+  await sheetsService.deleteRow('Comments', req.params.id);
+  res.json({ success: true });
+}));
+
+// GET like count + whether current visitor liked
+router.get('/:targetType/:targetId/likes', asyncHandler(async (req, res) => {
   const all = await sheetsService.listRows('Likes');
   const filtered = all.filter(
-    (l) => l.ResourceType === req.params.resourceType && l.ResourceId === req.params.resourceId
+    (l) => l.TargetType === req.params.targetType && l.TargetId === req.params.targetId
   );
   const visitorHash = crypto.createHash('sha256').update(req.ip || 'unknown').digest('hex').slice(0, 16);
   const liked = filtered.some((l) => l.VisitorHash === visitorHash);
   res.json({ success: true, data: { count: filtered.length, liked } });
 }));
 
-router.post('/:resourceType/:resourceId/likes', asyncHandler(async (req, res) => {
+// POST toggle like
+router.post('/:targetType/:targetId/likes', asyncHandler(async (req, res) => {
   const visitorHash = crypto.createHash('sha256').update(req.ip || 'unknown').digest('hex').slice(0, 16);
   const all = await sheetsService.listRows('Likes');
   const existing = all.find(
     (l) =>
-      l.ResourceType === req.params.resourceType &&
-      l.ResourceId === req.params.resourceId &&
+      l.TargetType === req.params.targetType &&
+      l.TargetId === req.params.targetId &&
       l.VisitorHash === visitorHash
   );
 
@@ -59,21 +68,19 @@ router.post('/:resourceType/:resourceId/likes', asyncHandler(async (req, res) =>
     await sheetsService.deleteRow('Likes', existing.Id);
     const remaining = all.filter(
       (l) =>
-        l.ResourceType === req.params.resourceType &&
-        l.ResourceId === req.params.resourceId &&
+        l.TargetType === req.params.targetType &&
+        l.TargetId === req.params.targetId &&
         l.Id !== existing.Id
     );
     res.json({ success: true, data: { count: remaining.length, liked: false } });
   } else {
     await sheetsService.appendRow('Likes', {
-      Id: uuid(),
-      ResourceType: req.params.resourceType,
-      ResourceId: req.params.resourceId,
+      TargetType: req.params.targetType,
+      TargetId: req.params.targetId,
       VisitorHash: visitorHash,
-      SubmittedAt: new Date().toISOString(),
     });
     const count = all.filter(
-      (l) => l.ResourceType === req.params.resourceType && l.ResourceId === req.params.resourceId
+      (l) => l.TargetType === req.params.targetType && l.TargetId === req.params.targetId
     ).length + 1;
     res.json({ success: true, data: { count, liked: true } });
   }

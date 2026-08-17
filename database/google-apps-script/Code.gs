@@ -39,7 +39,7 @@ const SHEET_CONFIG = {
   StudentAccounts: ['Id', 'SubmittedAt', 'StudentId', 'StudentName', 'ClassName', 'Email', 'ParentPhone', 'PasswordHash', 'Status', 'ApplicationId'],
 
   // Punch in/out attendance, one row per student per day.
-  Attendance: ['Id', 'StudentId', 'Date', 'PunchIn', 'PunchOut'],
+  Attendance: ['Id', 'StudentId', 'Date', 'PunchIn', 'PunchOut', 'PhotoUrl'],
 
   // Live/recorded classes the admin posts for students to access, filtered by ClassName.
   Classes: ['Id', 'SubmittedAt', 'Title', 'Subject', 'ClassName', 'Type', 'Url', 'ScheduledAt', 'Published'],
@@ -66,8 +66,8 @@ const SHEET_CONFIG = {
   // Comments — blog/post comments from students.
   Comments: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'StudentId', 'StudentName', 'Text', 'Published'],
 
-  // Likes — blog/post like tracking.
-  Likes: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'StudentId'],
+  // Likes — gallery/post like tracking (VisitorHash = IP-based unique hash).
+  Likes: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'VisitorHash'],
 
   // Admin accounts — additional admin/sub-admin accounts managed by super admin.
   AdminAccounts: ['Id', 'SubmittedAt', 'Username', 'PasswordHash', 'Role', 'Status'],

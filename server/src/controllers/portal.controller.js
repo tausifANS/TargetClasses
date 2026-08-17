@@ -29,7 +29,8 @@ export const me = asyncHandler(async (req, res) => {
 });
 
 export const punchIn = asyncHandler(async (req, res) => {
-  const result = await portalService.punchIn(req.user.studentId);
+  const photo = req.body.photo || '';
+  const result = await portalService.punchIn(req.user.studentId, photo);
   if (result.alreadyPunched) {
     return res.json({ success: true, message: 'Already punched in today', data: result.record });
   }

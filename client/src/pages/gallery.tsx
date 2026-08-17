@@ -1,11 +1,159 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Heart, MessageCircle, Send } from 'lucide-react';
 import { PageHero } from '@/components/layout/page-hero';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GALLERY_CATEGORIES, GALLERY_ITEMS, GALLERY_VIDEOS, type GalleryItem } from '@/data/gallery';
 import { useGalleryItems } from '@/hooks/use-content';
-import { resolveMediaUrl } from '@/lib/api';
+import { resolveMediaUrl, api } from '@/lib/api';
+import { useIsStudentLoggedIn } from '@/hooks/use-portal';
+
+interface GalleryComment {
+  id: number;
+  name: string;
+  text: string;
+  created_at: string;
+}
+
+function GalleryLikeComment({ imageId }: { imageId: string | number }) {
+  const loggedIn = useIsStudentLoggedIn();
+  const [likes, setLikes] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [comments, setComments] = useState<GalleryComment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentName, setCommentName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [likesRes, commentsRes] = await Promise.all([
+          api.get(`/comments/gallery/${imageId}/likes`),
+          api.get(`/comments/gallery/${imageId}`),
+        ]);
+        if (cancelled) return;
+        setLikes(likesRes.data?.count ?? 0);
+        setLiked(likesRes.data?.liked ?? false);
+        setComments(Array.isArray(commentsRes.data) ? commentsRes.data : []);
+      } catch {
+        // silently ignore
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [imageId]);
+
+  const toggleLike = async () => {
+    if (!loggedIn) return;
+    try {
+      const res = await api.post(`/comments/gallery/${imageId}/likes`);
+      setLikes(res.data?.count ?? likes);
+      setLiked(res.data?.liked ?? !liked);
+    } catch { /* ignore */ }
+  };
+
+  const postComment = async () => {
+    if (!loggedIn || !commentText.trim()) return;
+    const name = commentName.trim() || 'Student';
+    try {
+      const res = await api.post(`/comments/gallery/${imageId}`, { name, text: commentText.trim() });
+      const newComment = res.data;
+      if (newComment) setComments((prev) => [...prev, newComment]);
+      setCommentText('');
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Like button */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleLike}
+          className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+          style={{
+            background: liked ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.12)',
+          }}
+        >
+          <Heart
+            size={18}
+            className={liked ? 'fill-red-500 text-red-500' : 'text-white/60'}
+          />
+          <span className="text-white">{likes}</span>
+        </button>
+        <span className="flex items-center gap-2 text-sm text-white/50">
+          <MessageCircle size={16} />
+          {comments.length}
+        </span>
+      </div>
+
+      {/* Comments list */}
+      <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+        {!loading && comments.length === 0 && (
+          <p className="text-sm text-white/40 italic">No comments yet. Be the first!</p>
+        )}
+        {comments.map((c) => (
+          <div
+            key={c.id}
+            className="rounded-xl px-4 py-3"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gold">{c.name}</span>
+              <span className="text-xs text-white/30">
+                {new Date(c.created_at).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-white/80">{c.text}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Comment input */}
+      {loggedIn ? (
+        <div className="space-y-2">
+          <input
+            type="text"
+            placeholder="Your name"
+            value={commentName}
+            onChange={(e) => setCommentName(e.target.value)}
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-gold/50"
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Write a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && postComment()}
+              className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-gold/50"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+            />
+            <button
+              type="button"
+              onClick={postComment}
+              disabled={!commentText.trim()}
+              className="flex items-center justify-center rounded-xl px-4 py-2.5 text-white transition-colors hover:bg-gold/20 disabled:opacity-30"
+              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)' }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-center text-sm text-white/40">
+          Log in as a student to like and comment
+        </p>
+      )}
+    </div>
+  );
+}
 
 function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (item: GalleryItem) => void }) {
   return (
@@ -121,6 +269,7 @@ export function GalleryPage() {
             <div>
               <img src={active.src} alt={active.caption} className="max-h-[80vh] w-full rounded-2xl object-contain" />
               <p className="pt-4 text-center font-display text-base font-semibold text-white">{active.caption}</p>
+              <GalleryLikeComment imageId={active.id} />
             </div>
           )}
         </DialogContent>

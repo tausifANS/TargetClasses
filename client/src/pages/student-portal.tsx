@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,7 @@ import {
   Trophy,
   ChevronLeft,
   ChevronRight,
+  Camera,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { apiErrorMessage } from '@/lib/api';
 import { COACHING_CLASSES } from '@/constants/site';
 import { useNotices } from '@/hooks/use-content';
@@ -47,7 +49,7 @@ import { api } from '@/lib/api';
 function PortalHeader({ onLogout }: { onLogout?: () => void }) {
   return (
     <div className="section-container flex items-center justify-between py-6">
-      <Link to="/" className="flex items-center gap-2 text-sm font-medium text-white/70 transition-colors hover:text-white">
+      <Link to="/" className="flex items-center gap-2 text-sm font-medium text-white transition-colors hover:text-white">
         <ArrowLeft className="size-4" /> Back to website
       </Link>
       {onLogout && (
@@ -192,7 +194,7 @@ function ApplyForm() {
         <Label htmlFor="email" className="text-white/80">Email</Label>
         <Input id="email" type="email" className="border-white/15 bg-white/5 text-white" {...register('email')} />
         {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
-        <p className="text-xs text-white/50">Your Student ID and password will be sent here once approved.</p>
+        <p className="text-xs text-white/80">Your Student ID and password will be sent here once approved.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -214,18 +216,67 @@ function PunchCard() {
   const { data: attendance } = usePortalAttendance(true);
   const punchIn = usePunchIn();
   const punchOut = usePunchOut();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const todayRecord = attendance?.find((r) => r.Date === today);
 
-  const handlePunchIn = async () => {
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCameraOpen(false);
+  }, []);
+
+  const openCamera = async () => {
+    setCameraLoading(true);
     try {
-      await punchIn.mutateAsync();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      setCameraLoading(false);
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      });
+    } catch {
+      setCameraLoading(false);
+      toast.error('Camera access denied', { description: 'Please allow camera permission to punch in.' });
+    }
+  };
+
+  const handleCaptureAndPunchIn = async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const maxW = 640;
+    const scale = video.videoWidth > maxW ? maxW / video.videoWidth : 1;
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const photo = canvas.toDataURL('image/jpeg', 0.7);
+
+    stopCamera();
+
+    try {
+      await punchIn.mutateAsync({ photo } as any);
       toast.success('Punched in!');
     } catch (err) {
       toast.error(apiErrorMessage(err));
     }
   };
+
   const handlePunchOut = async () => {
     try {
       await punchOut.mutateAsync();
@@ -236,33 +287,55 @@ function PunchCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-      <div className="flex items-center gap-2.5 text-white/70">
-        <Clock className="size-5 text-gold" />
-        <span className="text-sm font-medium">Today's Attendance</span>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        <div className="flex-1 space-y-1 text-sm text-white/60">
-          <p>Punch In: <span className="font-medium text-white">{todayRecord?.PunchIn ? new Date(todayRecord.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
-          <p>Punch Out: <span className="font-medium text-white">{todayRecord?.PunchOut ? new Date(todayRecord.PunchOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
+    <>
+      <canvas ref={canvasRef} className="hidden" />
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 text-white">
+          <Clock className="size-5 text-gold" />
+          <span className="text-sm font-medium">Today's Attendance</span>
         </div>
 
-        {!todayRecord?.PunchIn ? (
-          <Button variant="gold" onClick={handlePunchIn} disabled={punchIn.isPending}>
-            <LogInIcon className="size-4" /> Punch In
-          </Button>
-        ) : !todayRecord?.PunchOut ? (
-          <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={handlePunchOut} disabled={punchOut.isPending}>
-            <LogOut className="size-4" /> Punch Out
-          </Button>
-        ) : (
-          <span className="flex items-center gap-1.5 text-sm text-emerald-300">
-            <CheckCircle2 className="size-4" /> Day complete
-          </span>
-        )}
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <div className="flex-1 space-y-1 text-sm text-white">
+            <p>Punch In: <span className="font-medium text-white">{todayRecord?.PunchIn ? new Date(todayRecord.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
+            <p>Punch Out: <span className="font-medium text-white">{todayRecord?.PunchOut ? new Date(todayRecord.PunchOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</span></p>
+          </div>
+
+          {!todayRecord?.PunchIn ? (
+            <Button variant="gold" onClick={openCamera} disabled={punchIn.isPending || cameraLoading}>
+              <Camera className="size-4" /> {cameraLoading ? 'Opening...' : 'Punch In'}
+            </Button>
+          ) : !todayRecord?.PunchOut ? (
+            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={handlePunchOut} disabled={punchOut.isPending}>
+              <LogOut className="size-4" /> Punch Out
+            </Button>
+          ) : (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-300">
+              <CheckCircle2 className="size-4" /> Day complete
+            </span>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Dialog open={cameraOpen} onOpenChange={(open) => { if (!open) stopCamera(); }}>
+        <DialogContent className="border border-white/10 bg-white/5 text-white backdrop-blur-xl sm:max-w-md">
+          <DialogTitle className="flex items-center gap-2 text-white">
+            <Camera className="size-5 text-gold" /> Verify Attendance
+          </DialogTitle>
+          <div className="relative mt-2 overflow-hidden rounded-xl bg-black">
+            <video ref={videoRef} autoPlay muted playsInline className="w-full rounded-xl" />
+          </div>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" className="border-white/20 text-white hover:bg-white/10" onClick={stopCamera}>
+              Cancel
+            </Button>
+            <Button variant="gold" onClick={handleCaptureAndPunchIn}>
+              <Camera className="size-4" /> Capture & Punch In
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -288,20 +361,20 @@ function AttendanceCalendar({ attendance }: { attendance?: Array<{ Date: string;
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
       <div className="flex items-center justify-between">
-        <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-white"><ChevronLeft className="size-5" /></button>
+        <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="rounded-lg p-1 text-white hover:bg-white/10 hover:text-white"><ChevronLeft className="size-5" /></button>
         <span className="font-display text-sm font-semibold text-white">{currentDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
-        <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-white"><ChevronRight className="size-5" /></button>
+        <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="rounded-lg p-1 text-white hover:bg-white/10 hover:text-white"><ChevronRight className="size-5" /></button>
       </div>
       <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="py-1 text-white/40">{d}</div>
+          <div key={i} className="py-1 text-white/70">{d}</div>
         ))}
         {blanks.map((b) => <div key={`b${b}`} />)}
         {days.map((day) => {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const rec = attendanceMap[dateStr];
           const isToday = dateStr === today;
-          let bg = 'text-white/60';
+          let bg = 'text-white';
           if (rec?.PunchIn) bg = rec.PunchOut ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300';
           if (isToday) bg += ' ring-1 ring-gold/50';
           return (
@@ -309,7 +382,7 @@ function AttendanceCalendar({ attendance }: { attendance?: Array<{ Date: string;
           );
         })}
       </div>
-      <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-white/40">
+      <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-white/70">
         <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-emerald-500/40" /> Present</span>
         <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-amber-500/40" /> Partial</span>
         <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-white/10" /> Absent</span>
@@ -331,18 +404,18 @@ function PortalQuestionsPanel({ studentClass }: { studentClass: string }) {
     })();
   });
 
-  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
-  if (questions.length === 0) return <p className="text-sm text-white/50">No questions posted yet.</p>;
+  if (loading) return <p className="text-sm text-white/80">Loading...</p>;
+  if (questions.length === 0) return <p className="text-sm text-white/80">No questions posted yet.</p>;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-      <div className="flex items-center gap-2.5 text-white/70"><FileText className="size-5 text-gold" /><span className="text-sm font-medium">Questions</span></div>
+      <div className="flex items-center gap-2.5 text-white"><FileText className="size-5 text-gold" /><span className="text-sm font-medium">Questions</span></div>
       <ul className="mt-4 space-y-3">
         {questions.map((q) => (
           <li key={q.Id} className="rounded-xl bg-white/5 p-4">
             <p className="font-display text-sm font-semibold text-white">{q.Title}</p>
-            <p className="mt-1 text-xs text-white/60">{q.Subject} &middot; {q.Type}</p>
-            {q.Description && <p className="mt-2 text-xs text-white/50">{q.Description}</p>}
+            <p className="mt-1 text-xs text-white">{q.Subject} &middot; {q.Type}</p>
+            {q.Description && <p className="mt-2 text-xs text-white/80">{q.Description}</p>}
             {q.PdfUrl && <a href={q.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View PDF</a>}
           </li>
         ))}
@@ -364,18 +437,18 @@ function PortalNotesPanel({ studentClass }: { studentClass: string }) {
     })();
   });
 
-  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
-  if (notes.length === 0) return <p className="text-sm text-white/50">No notes posted yet.</p>;
+  if (loading) return <p className="text-sm text-white/80">Loading...</p>;
+  if (notes.length === 0) return <p className="text-sm text-white/80">No notes posted yet.</p>;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-      <div className="flex items-center gap-2.5 text-white/70"><BookOpen className="size-5 text-gold" /><span className="text-sm font-medium">Study Notes</span></div>
+      <div className="flex items-center gap-2.5 text-white"><BookOpen className="size-5 text-gold" /><span className="text-sm font-medium">Study Notes</span></div>
       <ul className="mt-4 space-y-3">
         {notes.map((n) => (
           <li key={n.Id} className="rounded-xl bg-white/5 p-4">
             <p className="font-display text-sm font-semibold text-white">{n.Title}</p>
-            <p className="mt-1 text-xs text-white/60">{n.Subject}</p>
-            {n.Description && <p className="mt-2 text-xs text-white/50">{n.Description}</p>}
+            <p className="mt-1 text-xs text-white">{n.Subject}</p>
+            {n.Description && <p className="mt-2 text-xs text-white/80">{n.Description}</p>}
             {n.PdfUrl && <a href={n.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View PDF</a>}
           </li>
         ))}
@@ -397,18 +470,18 @@ function PortalResultsPanel({ studentClass }: { studentClass: string }) {
     })();
   });
 
-  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
-  if (results.length === 0) return <p className="text-sm text-white/50">No results posted yet.</p>;
+  if (loading) return <p className="text-sm text-white/80">Loading...</p>;
+  if (results.length === 0) return <p className="text-sm text-white/80">No results posted yet.</p>;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-      <div className="flex items-center gap-2.5 text-white/70"><Trophy className="size-5 text-gold" /><span className="text-sm font-medium">Results</span></div>
+      <div className="flex items-center gap-2.5 text-white"><Trophy className="size-5 text-gold" /><span className="text-sm font-medium">Results</span></div>
       <ul className="mt-4 space-y-3">
         {results.map((r) => (
           <li key={r.Id} className="rounded-xl bg-white/5 p-4">
             <p className="font-display text-sm font-semibold text-white">{r.ExamName}</p>
-            <p className="mt-1 text-xs text-white/60">{r.Subject} &middot; {r.ExamDate ? new Date(r.ExamDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
-            {r.Description && <p className="mt-2 text-xs text-white/50">{r.Description}</p>}
+            <p className="mt-1 text-xs text-white">{r.Subject} &middot; {r.ExamDate ? new Date(r.ExamDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+            {r.Description && <p className="mt-2 text-xs text-white/80">{r.Description}</p>}
             {r.PdfUrl && <a href={r.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View Result PDF</a>}
           </li>
         ))}
@@ -435,7 +508,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
           <div>
             <h1 className="font-display text-2xl font-bold text-white">{student.studentName}</h1>
-            <p className="text-sm text-white/60">Class {student.className} &middot; Student ID {student.studentId}</p>
+            <p className="text-sm text-white">Class {student.className} &middot; Student ID {student.studentId}</p>
           </div>
         </div>
       </div>
@@ -454,14 +527,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
         <TabsContent value="classes" className="mt-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-            <div className="flex items-center gap-2.5 text-white/70"><Video className="size-5 text-gold" /><span className="text-sm font-medium">Live & Recorded Classes</span></div>
+            <div className="flex items-center gap-2.5 text-white"><Video className="size-5 text-gold" /><span className="text-sm font-medium">Live & Recorded Classes</span></div>
             {classes && classes.length > 0 ? (
               <ul className="mt-4 space-y-3">
                 {classes.map((c) => (
                   <li key={c.Id} className="flex items-center justify-between gap-4 rounded-xl bg-white/5 p-4">
                     <div>
                       <p className="font-display text-sm font-semibold text-white">{c.Title}</p>
-                      <p className="text-xs text-white/60">{c.Subject} &middot; {c.Type}</p>
+                      <p className="text-xs text-white">{c.Subject} &middot; {c.Type}</p>
                     </div>
                     <Button asChild size="sm" variant="gold">
                       <a href={c.Url} target="_blank" rel="noreferrer"><PlayCircle className="size-4" /> {c.Type === 'Live' ? 'Join Live' : 'Watch'}</a>
@@ -469,7 +542,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                   </li>
                 ))}
               </ul>
-            ) : <p className="mt-3 text-sm text-white/50">No classes posted yet.</p>}
+            ) : <p className="mt-3 text-sm text-white/80">No classes posted yet.</p>}
           </div>
         </TabsContent>
 
@@ -487,17 +560,17 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
         <TabsContent value="notices" className="mt-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-            <div className="flex items-center gap-2.5 text-white/70"><Megaphone className="size-5 text-gold" /><span className="text-sm font-medium">Notices</span></div>
+            <div className="flex items-center gap-2.5 text-white"><Megaphone className="size-5 text-gold" /><span className="text-sm font-medium">Notices</span></div>
             {notices && notices.length > 0 ? (
               <ul className="mt-4 space-y-3">
                 {notices.map((n) => (
                   <li key={n.Id} className="rounded-xl bg-white/5 p-4">
                     <p className="font-display text-sm font-semibold text-white">{n.Title}</p>
-                    <p className="mt-1 text-xs text-white/60">{n.Body}</p>
+                    <p className="mt-1 text-xs text-white">{n.Body}</p>
                   </li>
                 ))}
               </ul>
-            ) : <p className="mt-3 text-sm text-white/50">No notices right now.</p>}
+            ) : <p className="mt-3 text-sm text-white/80">No notices right now.</p>}
           </div>
         </TabsContent>
       </Tabs>
@@ -538,7 +611,7 @@ export function StudentPortalPage() {
               <GraduationCap className="size-7" />
             </div>
             <h1 className="mt-5 text-center font-display text-2xl font-bold text-white sm:text-3xl">Student Portal</h1>
-            <p className="mt-2 text-center text-sm text-white/60">Log in to view classes, attendance, and notices — or apply for a new account.</p>
+            <p className="mt-2 text-center text-sm text-white">Log in to view classes, attendance, and notices — or apply for a new account.</p>
 
             <Tabs defaultValue="login" className="mt-8">
               <TabsList className="grid w-full grid-cols-2 bg-white/10">
