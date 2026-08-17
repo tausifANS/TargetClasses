@@ -22,6 +22,7 @@ app.use(
   cors({
     origin: env.CLIENT_URL,
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   })
 );
 app.use(compression());
