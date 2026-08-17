@@ -11,7 +11,7 @@ const SERVER_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
 
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  timeout: 30000,
 });
 
 /** Resolves a server-relative media path (e.g. an /uploads/... PhotoUrl/ImageUrl from Sheets) to an absolute URL. Leaves already-absolute URLs and client-bundled static paths (/images/, /brand/) untouched. */
