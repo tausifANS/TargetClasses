@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { UserCheck, Check, X } from 'lucide-react';
+import { UserCheck, Check, X, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePortalApplicationsList, useApprovePortalApplication, useRejectPortalApplication } from '@/hooks/use-admin';
 import { apiErrorMessage } from '@/lib/api';
 import { formatDateDMY, matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
+import { COACHING_CLASSES } from '@/constants/site';
 
 interface Application {
   Id: string;
@@ -27,8 +30,19 @@ export function ApplicationsPanel() {
   const approve = useApprovePortalApplication();
   const reject = useRejectPortalApplication();
   const [search, setSearch] = useState('');
+  const [filterClass, setFilterClass] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const rows = data ?? [];
-  const filtered = rows.filter((r) => matchesSearch(r, search));
+  const filtered = rows.filter((r) => {
+    if (!matchesSearch(r, search)) return false;
+    if (filterClass !== 'all' && r.ClassName !== filterClass) return false;
+    if (filterStatus !== 'all' && r.Status !== filterStatus) return false;
+    if (filterDateFrom && r.SubmittedAt < filterDateFrom) return false;
+    if (filterDateTo && r.SubmittedAt.slice(0, 10) > filterDateTo) return false;
+    return true;
+  });
 
   const handleApprove = async (id: string) => {
     try {
@@ -59,6 +73,34 @@ export function ApplicationsPanel() {
       </div>
 
       <AdminSearchInput value={search} onChange={setSearch} placeholder="Search applications…" />
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Filter className="size-3.5" /> Filters:</div>
+        <Select value={filterClass} onValueChange={setFilterClass}>
+          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Class" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {COACHING_CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">From:</span>
+          <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 w-[140px] text-xs" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">To:</span>
+          <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 w-[140px] text-xs" />
+        </div>
+      </div>
 
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
       {!isLoading && rows.length === 0 && <p className="mt-6 text-sm text-muted-foreground">No applications yet.</p>}

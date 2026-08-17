@@ -28,8 +28,8 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-background">
       <div className="section-container grid grid-cols-1 gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2 lg:col-span-1">
-          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-20 w-auto dark:hidden" />
-          <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-20 w-auto dark:block" />
+          <img src="/brand/logo-horizontal-light.svg" alt="Target Classes" className="h-16 w-auto max-w-[15rem] dark:hidden" />
+          <img src="/brand/logo-horizontal-dark.svg" alt="Target Classes" className="hidden h-16 w-auto max-w-[15rem] dark:block" />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">
             Established {SITE.established}, {SITE.name} has been guiding young learners in Lar Town, Deoria
             with dedicated faculty and a premium learning environment.

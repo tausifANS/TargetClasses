@@ -1,6 +1,8 @@
 import { Hero } from '@/components/sections/hero';
 import { HighlightedPosts } from '@/components/sections/highlighted-posts';
 import { QuickFacts } from '@/components/sections/quick-facts';
+import { SmartClasses } from '@/components/sections/smart-classes';
+import { PracticalLab } from '@/components/sections/practical-lab';
 import { WhyChooseUs } from '@/components/sections/why-choose-us';
 import { FacultyPreview } from '@/components/sections/faculty-preview';
 import { GalleryPreview } from '@/components/sections/gallery-preview';
@@ -18,6 +20,8 @@ export function HomePage() {
       <Hero />
       <HighlightedPosts />
       <QuickFacts />
+      <SmartClasses />
+      <PracticalLab />
       <WhyChooseUs />
       <FacultyPreview />
       <GalleryPreview />

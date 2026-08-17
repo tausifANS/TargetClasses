@@ -22,7 +22,7 @@ export function FacultyPreview() {
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
+        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {teachers.slice(0, 4).map((t, i) => (
             <motion.div
               key={t.Id}

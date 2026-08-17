@@ -27,8 +27,8 @@ function GalleryGrid({ items, onSelect }: { items: GalleryItem[]; onSelect: (ite
             loading="lazy"
             className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-          <span className="absolute bottom-3 left-3 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100" />
+          <span className="absolute bottom-3 left-3 text-sm font-medium text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             {item.caption}
           </span>
         </motion.button>
@@ -118,7 +118,10 @@ export function GalleryPage() {
         <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
           <DialogTitle className="sr-only">{active?.caption ?? 'Gallery image'}</DialogTitle>
           {active && (
-            <img src={active.src} alt={active.caption} className="max-h-[85vh] w-full rounded-2xl object-contain" />
+            <div>
+              <img src={active.src} alt={active.caption} className="max-h-[80vh] w-full rounded-2xl object-contain" />
+              <p className="pt-4 text-center font-display text-base font-semibold text-white">{active.caption}</p>
+            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -53,6 +53,24 @@ const SHEET_CONFIG = {
   // Faculty team shown on the public Faculty page + homepage preview, fully
   // managed from the Admin Portal (add/edit/delete, with photo upload).
   Teachers: ['Id', 'SubmittedAt', 'Name', 'Position', 'Subjects', 'PhotoUrl', 'DisplayOrder', 'Published'],
+
+  // Questions — MCQ and written practice questions posted by admin.
+  Questions: ['Id', 'SubmittedAt', 'ClassName', 'Subject', 'Title', 'Description', 'Type', 'Options', 'CorrectAnswer', 'Answer', 'PdfUrl', 'Published'],
+
+  // Notes — PDF/notes shared with students.
+  Notes: ['Id', 'SubmittedAt', 'ClassName', 'Subject', 'Title', 'Description', 'PdfUrl', 'Published'],
+
+  // Results — exam results uploaded by admin.
+  Results: ['Id', 'SubmittedAt', 'ClassName', 'Subject', 'ExamName', 'ExamDate', 'Description', 'PdfUrl', 'Published'],
+
+  // Comments — blog/post comments from students.
+  Comments: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'StudentId', 'StudentName', 'Text', 'Published'],
+
+  // Likes — blog/post like tracking.
+  Likes: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'StudentId'],
+
+  // Admin accounts — additional admin/sub-admin accounts managed by super admin.
+  AdminAccounts: ['Id', 'SubmittedAt', 'Username', 'PasswordHash', 'Role', 'Status'],
 };
 
 function ensureSheet_(name) {

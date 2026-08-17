@@ -29,11 +29,11 @@ export function Navbar() {
       )}
     >
       <div className="section-container flex items-center justify-between">
-        <Link to="/" className="flex items-center" aria-label="Target Classes home">
+        <Link to="/" className="flex min-w-0 items-center" aria-label="Target Classes home">
           <img
             src={useWhiteText ? '/brand/logo-horizontal-dark.svg' : '/brand/logo-horizontal-light.svg'}
             alt="Target Classes"
-            className={cn('h-20 w-auto sm:h-24', transparentMode && 'drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]')}
+            className={cn('h-11 w-auto sm:h-20 lg:h-24', transparentMode && 'drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]')}
           />
         </Link>
 

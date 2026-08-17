@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,11 @@ import {
   Clock,
   LogIn as LogInIcon,
   CheckCircle2,
+  FileText,
+  BookOpen,
+  Trophy,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +42,7 @@ import {
   usePunchOut,
   usePortalApplication,
 } from '@/hooks/use-portal';
+import { api } from '@/lib/api';
 
 function PortalHeader({ onLogout }: { onLogout?: () => void }) {
   return (
@@ -260,11 +266,163 @@ function PunchCard() {
   );
 }
 
+function AttendanceCalendar({ attendance }: { attendance?: Array<{ Date: string; PunchIn?: string; PunchOut?: string }> }) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const attendanceMap = useMemo(() => {
+    if (!attendance) return {};
+    const map: Record<string, { PunchIn?: string; PunchOut?: string }> = {};
+    attendance.forEach((r) => { map[r.Date] = { PunchIn: r.PunchIn, PunchOut: r.PunchOut }; });
+    return map;
+  }, [attendance]);
+
+  const blanks = Array.from({ length: firstDayOfWeek }, (_, i) => i);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="flex items-center justify-between">
+        <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-white"><ChevronLeft className="size-5" /></button>
+        <span className="font-display text-sm font-semibold text-white">{currentDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
+        <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="rounded-lg p-1 text-white/60 hover:bg-white/10 hover:text-white"><ChevronRight className="size-5" /></button>
+      </div>
+      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <div key={i} className="py-1 text-white/40">{d}</div>
+        ))}
+        {blanks.map((b) => <div key={`b${b}`} />)}
+        {days.map((day) => {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const rec = attendanceMap[dateStr];
+          const isToday = dateStr === today;
+          let bg = 'text-white/60';
+          if (rec?.PunchIn) bg = rec.PunchOut ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300';
+          if (isToday) bg += ' ring-1 ring-gold/50';
+          return (
+            <div key={day} className={`flex size-8 items-center justify-center rounded-full text-xs ${bg}`}>{day}</div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-white/40">
+        <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-emerald-500/40" /> Present</span>
+        <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-amber-500/40" /> Partial</span>
+        <span className="flex items-center gap-1"><span className="inline-block size-2 rounded-full bg-white/10" /> Absent</span>
+      </div>
+    </div>
+  );
+}
+
+function PortalQuestionsPanel({ studentClass }: { studentClass: string }) {
+  const [questions, setQuestions] = useState<Array<Record<string, string>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useState(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/questions?className=${encodeURIComponent(studentClass)}`);
+        setQuestions(res.data.data ?? []);
+      } catch { /* empty */ } finally { setLoading(false); }
+    })();
+  });
+
+  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
+  if (questions.length === 0) return <p className="text-sm text-white/50">No questions posted yet.</p>;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="flex items-center gap-2.5 text-white/70"><FileText className="size-5 text-gold" /><span className="text-sm font-medium">Questions</span></div>
+      <ul className="mt-4 space-y-3">
+        {questions.map((q) => (
+          <li key={q.Id} className="rounded-xl bg-white/5 p-4">
+            <p className="font-display text-sm font-semibold text-white">{q.Title}</p>
+            <p className="mt-1 text-xs text-white/60">{q.Subject} &middot; {q.Type}</p>
+            {q.Description && <p className="mt-2 text-xs text-white/50">{q.Description}</p>}
+            {q.PdfUrl && <a href={q.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View PDF</a>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PortalNotesPanel({ studentClass }: { studentClass: string }) {
+  const [notes, setNotes] = useState<Array<Record<string, string>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useState(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/notes?className=${encodeURIComponent(studentClass)}`);
+        setNotes(res.data.data ?? []);
+      } catch { /* empty */ } finally { setLoading(false); }
+    })();
+  });
+
+  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
+  if (notes.length === 0) return <p className="text-sm text-white/50">No notes posted yet.</p>;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="flex items-center gap-2.5 text-white/70"><BookOpen className="size-5 text-gold" /><span className="text-sm font-medium">Study Notes</span></div>
+      <ul className="mt-4 space-y-3">
+        {notes.map((n) => (
+          <li key={n.Id} className="rounded-xl bg-white/5 p-4">
+            <p className="font-display text-sm font-semibold text-white">{n.Title}</p>
+            <p className="mt-1 text-xs text-white/60">{n.Subject}</p>
+            {n.Description && <p className="mt-2 text-xs text-white/50">{n.Description}</p>}
+            {n.PdfUrl && <a href={n.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View PDF</a>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PortalResultsPanel({ studentClass }: { studentClass: string }) {
+  const [results, setResults] = useState<Array<Record<string, string>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useState(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/results?className=${encodeURIComponent(studentClass)}`);
+        setResults(res.data.data ?? []);
+      } catch { /* empty */ } finally { setLoading(false); }
+    })();
+  });
+
+  if (loading) return <p className="text-sm text-white/50">Loading...</p>;
+  if (results.length === 0) return <p className="text-sm text-white/50">No results posted yet.</p>;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="flex items-center gap-2.5 text-white/70"><Trophy className="size-5 text-gold" /><span className="text-sm font-medium">Results</span></div>
+      <ul className="mt-4 space-y-3">
+        {results.map((r) => (
+          <li key={r.Id} className="rounded-xl bg-white/5 p-4">
+            <p className="font-display text-sm font-semibold text-white">{r.ExamName}</p>
+            <p className="mt-1 text-xs text-white/60">{r.Subject} &middot; {r.ExamDate ? new Date(r.ExamDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+            {r.Description && <p className="mt-2 text-xs text-white/50">{r.Description}</p>}
+            {r.PdfUrl && <a href={r.PdfUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-gold underline">View Result PDF</a>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const { data: student } = usePortalMe(true);
   const { data: classes } = usePortalClasses(true);
   const { data: attendance } = usePortalAttendance(true);
   const { data: notices } = useNotices();
+  const [portalTab, setPortalTab] = useState('classes');
 
   if (!student) return null;
 
@@ -283,74 +441,66 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <PunchCard />
+      <AttendanceCalendar attendance={attendance} />
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-2.5 text-white/70">
-          <Video className="size-5 text-gold" />
-          <span className="text-sm font-medium">Classes</span>
-        </div>
-        {classes && classes.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {classes.map((c) => (
-              <li key={c.Id} className="flex items-center justify-between gap-4 rounded-xl bg-white/5 p-4">
-                <div>
-                  <p className="font-display text-sm font-semibold text-white">{c.Title}</p>
-                  <p className="text-xs text-white/60">{c.Subject} &middot; {c.Type}</p>
-                </div>
-                <Button asChild size="sm" variant="gold">
-                  <a href={c.Url} target="_blank" rel="noreferrer">
-                    <PlayCircle className="size-4" /> {c.Type === 'Live' ? 'Join Live' : 'Watch'}
-                  </a>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-white/50">No classes posted yet — check back soon.</p>
-        )}
-      </div>
+      <Tabs value={portalTab} onValueChange={setPortalTab}>
+        <TabsList className="flex h-auto w-fit flex-wrap gap-1 bg-white/10 p-1.5">
+          <TabsTrigger value="classes" className="rounded-full px-3 py-1.5 text-xs"><Video className="mr-1 size-3" />Classes</TabsTrigger>
+          <TabsTrigger value="questions" className="rounded-full px-3 py-1.5 text-xs"><FileText className="mr-1 size-3" />Questions</TabsTrigger>
+          <TabsTrigger value="notes" className="rounded-full px-3 py-1.5 text-xs"><BookOpen className="mr-1 size-3" />Notes</TabsTrigger>
+          <TabsTrigger value="results" className="rounded-full px-3 py-1.5 text-xs"><Trophy className="mr-1 size-3" />Results</TabsTrigger>
+          <TabsTrigger value="notices" className="rounded-full px-3 py-1.5 text-xs"><Megaphone className="mr-1 size-3" />Notices</TabsTrigger>
+        </TabsList>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-2.5 text-white/70">
-          <Clock className="size-5 text-gold" />
-          <span className="text-sm font-medium">Attendance History</span>
-        </div>
-        {attendance && attendance.length > 0 ? (
-          <ul className="mt-4 space-y-2 text-sm">
-            {attendance.slice(0, 10).map((r) => (
-              <li key={r.Id} className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-2.5 text-white/70">
-                <span>{new Date(r.Date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                <span>
-                  {r.PunchIn ? new Date(r.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
-                  {' – '}
-                  {r.PunchOut ? new Date(r.PunchOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-white/50">No attendance recorded yet.</p>
-        )}
-      </div>
+        <TabsContent value="classes" className="mt-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+            <div className="flex items-center gap-2.5 text-white/70"><Video className="size-5 text-gold" /><span className="text-sm font-medium">Live & Recorded Classes</span></div>
+            {classes && classes.length > 0 ? (
+              <ul className="mt-4 space-y-3">
+                {classes.map((c) => (
+                  <li key={c.Id} className="flex items-center justify-between gap-4 rounded-xl bg-white/5 p-4">
+                    <div>
+                      <p className="font-display text-sm font-semibold text-white">{c.Title}</p>
+                      <p className="text-xs text-white/60">{c.Subject} &middot; {c.Type}</p>
+                    </div>
+                    <Button asChild size="sm" variant="gold">
+                      <a href={c.Url} target="_blank" rel="noreferrer"><PlayCircle className="size-4" /> {c.Type === 'Live' ? 'Join Live' : 'Watch'}</a>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-3 text-sm text-white/50">No classes posted yet.</p>}
+          </div>
+        </TabsContent>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-2.5 text-white/70">
-          <Megaphone className="size-5 text-gold" />
-          <span className="text-sm font-medium">Notices</span>
-        </div>
-        {notices && notices.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {notices.map((n) => (
-              <li key={n.Id} className="rounded-xl bg-white/5 p-4">
-                <p className="font-display text-sm font-semibold text-white">{n.Title}</p>
-                <p className="mt-1 text-xs text-white/60">{n.Body}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-white/50">No notices right now.</p>
-        )}
-      </div>
+        <TabsContent value="questions" className="mt-4">
+          <PortalQuestionsPanel studentClass={student.className} />
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-4">
+          <PortalNotesPanel studentClass={student.className} />
+        </TabsContent>
+
+        <TabsContent value="results" className="mt-4">
+          <PortalResultsPanel studentClass={student.className} />
+        </TabsContent>
+
+        <TabsContent value="notices" className="mt-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+            <div className="flex items-center gap-2.5 text-white/70"><Megaphone className="size-5 text-gold" /><span className="text-sm font-medium">Notices</span></div>
+            {notices && notices.length > 0 ? (
+              <ul className="mt-4 space-y-3">
+                {notices.map((n) => (
+                  <li key={n.Id} className="rounded-xl bg-white/5 p-4">
+                    <p className="font-display text-sm font-semibold text-white">{n.Title}</p>
+                    <p className="mt-1 text-xs text-white/60">{n.Body}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-3 text-sm text-white/50">No notices right now.</p>}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <div className="flex justify-center pt-2">
         <Button variant="glass" onClick={onLogout}>

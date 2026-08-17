@@ -13,6 +13,9 @@ import { ClassesPanel } from '@/pages/admin/classes-panel';
 import { PostsPanel } from '@/pages/admin/posts-panel';
 import { GalleryPanel } from '@/pages/admin/gallery-panel';
 import { TeachersPanel } from '@/pages/admin/teachers-panel';
+import { QuestionsPanel } from '@/pages/admin/questions-panel';
+import { NotesPanel } from '@/pages/admin/notes-panel';
+import { ResultsPanel } from '@/pages/admin/results-panel';
 
 const SECTIONS = [
   { value: 'inbox', label: 'Inbox' },
@@ -21,6 +24,9 @@ const SECTIONS = [
   { value: 'attendance', label: 'Attendance' },
   { value: 'content', label: 'Content' },
   { value: 'classes', label: 'Classes' },
+  { value: 'questions', label: 'Questions' },
+  { value: 'notes', label: 'Notes' },
+  { value: 'results', label: 'Results' },
   { value: 'posts', label: 'Posts' },
   { value: 'gallery', label: 'Gallery' },
   { value: 'teachers', label: 'Teachers' },
@@ -72,6 +78,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <TabsContent value="attendance"><AttendancePanel /></TabsContent>
             <TabsContent value="content"><ContentPanel /></TabsContent>
             <TabsContent value="classes"><ClassesPanel /></TabsContent>
+            <TabsContent value="questions"><QuestionsPanel /></TabsContent>
+            <TabsContent value="notes"><NotesPanel /></TabsContent>
+            <TabsContent value="results"><ResultsPanel /></TabsContent>
             <TabsContent value="posts"><PostsPanel /></TabsContent>
             <TabsContent value="gallery"><GalleryPanel /></TabsContent>
             <TabsContent value="teachers"><TeachersPanel /></TabsContent>

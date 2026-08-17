@@ -110,7 +110,7 @@ export function ClassesPanel() {
             <div className="min-w-0 flex-1 space-y-0.5 text-sm">
               <p className="font-display font-semibold">{row.Title}</p>
               <p className="text-muted-foreground">{row.Subject} &middot; Class {row.ClassName} &middot; {row.Type}</p>
-              <a href={row.Url} target="_blank" rel="noreferrer" className="text-gold hover:underline">{row.Url}</a>
+              <a href={row.Url} target="_blank" rel="noreferrer" className="break-all text-gold hover:underline">{row.Url}</a>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Badge variant={truthy(row.Published) ? 'default' : 'muted'} className="cursor-pointer" onClick={() => togglePublished(row)}>

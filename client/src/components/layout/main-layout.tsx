@@ -8,7 +8,7 @@ export function MainLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       <Navbar />
       <AnimatePresence mode="wait">
         <motion.main

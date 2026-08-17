@@ -26,7 +26,7 @@ export function AdmissionCta() {
           Give your child the strong start they deserve. Fill out our admission form and our team will
           get back to you shortly.
         </p>
-        <Button asChild size="lg" variant="gold" className="relative mt-8">
+        <Button asChild size="lg" variant="gold" className="relative mt-8 w-full sm:w-auto">
           <Link to="/admission">
             Apply for Admission <ArrowRight className="size-4" />
           </Link>

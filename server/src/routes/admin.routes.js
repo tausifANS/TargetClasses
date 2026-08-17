@@ -10,6 +10,10 @@ import * as postsController from '../controllers/admin/posts.controller.js';
 import * as teachersController from '../controllers/admin/teachers.controller.js';
 import * as attendanceController from '../controllers/admin/attendance.controller.js';
 import * as studentsController from '../controllers/admin/students.controller.js';
+import * as questionsController from '../controllers/admin/questions.controller.js';
+import * as notesController from '../controllers/admin/notes.controller.js';
+import * as resultsController from '../controllers/admin/results.controller.js';
+import * as adminAccountsController from '../controllers/admin/adminAccounts.controller.js';
 import { makeCrudController } from '../controllers/admin/crud.factory.js';
 import {
   adminLoginSchema,
@@ -23,6 +27,7 @@ import {
 const router = Router();
 
 router.post('/login', validate(adminLoginSchema), authController.login);
+router.post('/login-account', adminAccountsController.loginWithAccount);
 
 // Everything below requires a valid admin session.
 router.use(authenticate, authorize('admin'));
@@ -33,7 +38,7 @@ router.get('/me', authController.me);
 router.get('/inbox/:sheet', inboxController.list);
 router.patch('/inbox/:sheet/:id', validate(inboxStatusSchema), inboxController.updateStatus);
 
-// Student Portal signup approvals.
+// Student Portal signup approvals — with optional query filters.
 router.get('/portal-applications', portalApplicationsController.list);
 router.post('/portal-applications/:id/approve', portalApplicationsController.approve);
 router.post('/portal-applications/:id/reject', portalApplicationsController.reject);
@@ -90,5 +95,29 @@ router.get('/teachers', teachersController.list);
 router.post('/teachers', uploadImage, teachersController.create);
 router.patch('/teachers/:id', uploadImage, teachersController.update);
 router.delete('/teachers/:id', teachersController.remove);
+
+// Questions (MCQ + Written)
+router.get('/questions', questionsController.list);
+router.post('/questions', questionsController.create);
+router.patch('/questions/:id', questionsController.update);
+router.delete('/questions/:id', questionsController.remove);
+
+// Notes (PDF sharing)
+router.get('/notes', notesController.list);
+router.post('/notes', notesController.create);
+router.patch('/notes/:id', notesController.update);
+router.delete('/notes/:id', notesController.remove);
+
+// Results
+router.get('/results', resultsController.list);
+router.post('/results', resultsController.create);
+router.patch('/results/:id', resultsController.update);
+router.delete('/results/:id', resultsController.remove);
+
+// Admin Accounts management
+router.get('/accounts', adminAccountsController.list);
+router.post('/accounts', adminAccountsController.create);
+router.delete('/accounts/:id', adminAccountsController.remove);
+router.post('/change-password', adminAccountsController.changePassword);
 
 export default router;
