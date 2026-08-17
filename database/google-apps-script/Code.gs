@@ -18,7 +18,7 @@
  * topper / post on the live site, open its tab and set the "Published" column to TRUE.
  */
 
-const API_SECRET = 'REPLACE_WITH_YOUR_OWN_RANDOM_SECRET'; // generate one (e.g. `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`) and put the SAME value in server/.env as GOOGLE_SHEETS_API_SECRET — never commit the real value here
+const API_SECRET = '0893aef82a395e6039260a9cd0fc6b615833d4ecb63e2775';
 
 const SHEET_CONFIG = {
   Admissions: ['Id', 'SubmittedAt', 'StudentName', 'DOB', 'ApplyingFor', 'ParentName', 'Phone', 'Email', 'Address', 'Message', 'Status'],
