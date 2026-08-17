@@ -24,7 +24,10 @@ export function resolveMediaUrl(url?: string | null) {
 // Attaches the admin or student session token depending on which API the
 // request is for — the two portals have separate, independent sessions.
 api.interceptors.request.use((config) => {
-  const role = config.url?.startsWith('/admin') ? 'admin' : config.url?.startsWith('/portal') ? 'student' : null;
+  let role: 'admin' | 'student' | 'user' | null = null;
+  if (config.url?.startsWith('/admin')) role = 'admin';
+  else if (config.url?.startsWith('/portal')) role = 'student';
+  else if (config.url?.startsWith('/comments') || config.url?.startsWith('/user-auth/me')) role = 'user';
   if (role) {
     const token = getToken(role);
     if (token) config.headers.Authorization = `Bearer ${token}`;
