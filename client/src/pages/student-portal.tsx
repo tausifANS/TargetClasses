@@ -270,7 +270,7 @@ function PunchCard() {
     stopCamera();
 
     try {
-      await punchIn.mutateAsync({ photo } as any);
+      await punchIn.mutateAsync({ photo });
       toast.success('Punched in!');
     } catch (err) {
       toast.error(apiErrorMessage(err));

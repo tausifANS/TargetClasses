@@ -14,6 +14,7 @@ import * as questionsController from '../controllers/admin/questions.controller.
 import * as notesController from '../controllers/admin/notes.controller.js';
 import * as resultsController from '../controllers/admin/results.controller.js';
 import * as adminAccountsController from '../controllers/admin/adminAccounts.controller.js';
+import * as settingsController from '../controllers/admin/settings.controller.js';
 import { makeCrudController } from '../controllers/admin/crud.factory.js';
 import {
   adminLoginSchema,
@@ -22,6 +23,7 @@ import {
   eventSchema,
   topperSchema,
   classContentSchema,
+  smtpSettingsSchema,
 } from '../validators/admin.validators.js';
 
 const router = Router();
@@ -119,5 +121,10 @@ router.get('/accounts', adminAccountsController.list);
 router.post('/accounts', adminAccountsController.create);
 router.delete('/accounts/:id', adminAccountsController.remove);
 router.post('/change-password', adminAccountsController.changePassword);
+
+// Email (SMTP) settings — editable at runtime since env vars can't change
+// after deploy. Password value is never sent back to the client.
+router.get('/settings/smtp', settingsController.getSmtpSettings);
+router.patch('/settings/smtp', validate(smtpSettingsSchema), settingsController.updateSmtpSettings);
 
 export default router;

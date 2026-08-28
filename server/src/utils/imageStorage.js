@@ -21,7 +21,7 @@ const MAX_SHEET_CELL_CHARS = 50000;
  */
 export async function saveImage(buffer, folder) {
   if (process.env.VERCEL) {
-    return saveAsDataUrl(buffer);
+    return compressToDataUrl(buffer);
   }
 
   const dir = path.join(UPLOADS_ROOT, folder);
@@ -38,9 +38,11 @@ export async function saveImage(buffer, folder) {
 /**
  * Converts an image buffer into a base64 data-URL short enough for a Google
  * Sheets cell (≤ 50 000 characters).  Starts at 640 px wide / quality 75 and
- * steps down until it fits.
+ * steps down until it fits. Exported so callers that receive an image as a
+ * data URL directly (e.g. a canvas photo capture) can still guarantee it
+ * fits, instead of writing an unbounded string straight to a Sheets cell.
  */
-async function saveAsDataUrl(buffer) {
+export async function compressToDataUrl(buffer) {
   const sizes = [
     { width: 640, quality: 75 },
     { width: 480, quality: 70 },
@@ -56,4 +58,11 @@ async function saveAsDataUrl(buffer) {
   }
 
   throw ApiError.badRequest('Image is too large to store. Please use a smaller image.');
+}
+
+/** Decodes a `data:image/...;base64,...` string (e.g. from a <canvas> capture) into a Buffer. Throws if the string isn't a valid data URL. */
+export function dataUrlToBuffer(dataUrl) {
+  const match = /^data:image\/[a-zA-Z+.-]+;base64,(.+)$/.exec(dataUrl || '');
+  if (!match) throw ApiError.badRequest('Invalid image data');
+  return Buffer.from(match[1], 'base64');
 }

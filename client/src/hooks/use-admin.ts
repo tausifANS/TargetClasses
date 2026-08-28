@@ -127,3 +127,34 @@ export function useStudentsList<T = Record<string, unknown>>(enabled: boolean) {
 export function useAttendanceList<T = Record<string, unknown>>(enabled: boolean) {
   return useAdminList<T>('attendance', '/admin/attendance', enabled);
 }
+
+// ---- Email (SMTP) settings ----
+
+export interface SmtpSettings {
+  host: string;
+  port: string;
+  user: string;
+  from: string;
+  passwordSet: boolean;
+  overridden: boolean;
+}
+
+export function useSmtpSettings(enabled: boolean) {
+  return useQuery<SmtpSettings>({
+    queryKey: ['admin', 'smtp-settings'],
+    queryFn: async () => (await api.get('/admin/settings/smtp')).data.data,
+    enabled,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+}
+
+export function useUpdateSmtpSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { host?: string; port?: string; user?: string; from?: string; password?: string }) =>
+      (await api.patch('/admin/settings/smtp', data)).data,
+    onSuccess: () => invalidate(queryClient, 'smtp-settings'),
+  });
+}

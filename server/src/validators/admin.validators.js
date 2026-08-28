@@ -44,3 +44,11 @@ export const galleryUploadSchema = z.object({
   category: z.string().min(1),
   caption: z.string().optional().or(z.literal('')),
 });
+
+export const smtpSettingsSchema = z.object({
+  host: z.string().optional(),
+  port: z.union([z.string(), z.number()]).optional(),
+  user: z.string().optional(),
+  from: z.string().optional(),
+  password: z.string().optional().or(z.literal('')),
+});

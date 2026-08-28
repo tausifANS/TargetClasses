@@ -1,20 +1,33 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import * as settingsService from './settings.service.js';
 
-let transporter = null;
+/**
+ * SMTP credentials come from the Settings sheet first (admin-editable from
+ * the Admin Portal, so a Gmail App Password can be rotated without a code
+ * deploy), falling back to the server/.env values set at deploy time. A
+ * fresh transporter is built per send — nodemailer connects per-message
+ * anyway at this volume, and it means a password rotation takes effect on
+ * the very next email instead of needing a server restart.
+ */
+async function getTransporter() {
+  const [host, port, user, pass] = await Promise.all([
+    settingsService.getSetting('SMTP_HOST', env.SMTP_HOST),
+    settingsService.getSetting('SMTP_PORT', env.SMTP_PORT),
+    settingsService.getSetting('SMTP_USER', env.SMTP_USER),
+    settingsService.getSetting('SMTP_PASS', env.SMTP_PASS),
+  ]);
 
-function getTransporter() {
-  if (!env.SMTP_USER || !env.SMTP_PASS) return null;
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-    });
-  }
-  return transporter;
+  if (!user || !pass) return null;
+
+  const numericPort = Number(port) || 587;
+  return nodemailer.createTransport({
+    host,
+    port: numericPort,
+    secure: numericPort === 465,
+    auth: { user, pass },
+  });
 }
 
 /**
@@ -23,13 +36,19 @@ function getTransporter() {
  * SMTP_PASS (a Gmail App Password has to be generated separately).
  */
 export async function sendEmail({ to, subject, html }) {
-  const t = getTransporter();
+  const t = await getTransporter();
   if (!t) {
     logger.warn(`SMTP not configured — skipping email to ${to}: "${subject}"`);
     return { sent: false };
   }
-  await t.sendMail({ from: env.SMTP_FROM || env.SMTP_USER, to, subject, html });
-  return { sent: true };
+  const from = (await settingsService.getSetting('SMTP_FROM', env.SMTP_FROM)) || (await settingsService.getSetting('SMTP_USER', env.SMTP_USER));
+  try {
+    await t.sendMail({ from, to, subject, html });
+    return { sent: true };
+  } catch (err) {
+    logger.error(`Failed to send email to ${to}: ${err.message}`);
+    return { sent: false, error: err.message };
+  }
 }
 
 export function passwordResetEmail(resetUrl) {

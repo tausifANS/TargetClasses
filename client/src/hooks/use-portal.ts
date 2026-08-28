@@ -81,7 +81,7 @@ export function usePortalAttendance(enabled: boolean) {
 export function usePunchIn() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => (await api.post('/portal/attendance/punch-in')).data,
+    mutationFn: async (data?: { photo?: string }) => (await api.post('/portal/attendance/punch-in', data)).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['portal', 'attendance'] }),
   });
 }

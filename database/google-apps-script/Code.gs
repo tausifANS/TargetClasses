@@ -18,7 +18,7 @@
  * topper / post on the live site, open its tab and set the "Published" column to TRUE.
  */
 
-const API_SECRET = '0893aef82a395e6039260a9cd0fc6b615833d4ecb63e2775';
+const API_SECRET = 'REPLACE_WITH_YOUR_OWN_RANDOM_SECRET'; // generate one (e.g. `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`) and put the SAME value in server/.env as GOOGLE_SHEETS_API_SECRET — never commit the real value here (a previous commit leaked the real secret to this PUBLIC repo; it must be treated as compromised and rotated)
 
 const SHEET_CONFIG = {
   Admissions: ['Id', 'SubmittedAt', 'StudentName', 'DOB', 'ApplyingFor', 'ParentName', 'Phone', 'Email', 'Address', 'Message', 'Status'],
@@ -74,6 +74,14 @@ const SHEET_CONFIG = {
 
   // Admin accounts — additional admin/sub-admin accounts managed by super admin.
   AdminAccounts: ['Id', 'SubmittedAt', 'Username', 'PasswordHash', 'Role', 'Status'],
+
+  // Key/value runtime settings editable from the Admin Portal (e.g. SMTP
+  // credentials) — lets the admin rotate a Gmail App Password without
+  // needing a code deploy, since env vars can't be changed at runtime once
+  // the server is deployed. One row per key; the server upserts by finding
+  // the existing row for a Key and using the normal update/delete-by-Id
+  // actions, so no new Apps Script logic is needed for this table.
+  Settings: ['Id', 'SubmittedAt', 'Key', 'Value'],
 };
 
 function ensureSheet_(name) {
@@ -88,6 +96,18 @@ function ensureSheet_(name) {
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
+    return sheet;
+  }
+
+  // Existing sheet — self-heal any columns that were added to SHEET_CONFIG
+  // after the tab already had data (e.g. adding PhotoUrl to Attendance).
+  // Only ever appends new header columns; never removes or reorders
+  // existing ones, so it's safe to run on every request.
+  const lastCol = sheet.getLastColumn();
+  const existingHeaders = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  const missing = headers.filter((h) => existingHeaders.indexOf(h) === -1);
+  if (missing.length > 0) {
+    sheet.getRange(1, existingHeaders.length + 1, 1, missing.length).setValues([missing]);
   }
   return sheet;
 }
@@ -147,6 +167,19 @@ function doPost(e) {
   }
 }
 
+// Google Sheets auto-converts a bare 'YYYY-MM-DD' string into an actual Date
+// cell (default "Automatic" number format), which then round-trips back as a
+// timezone-shifted ISO datetime instead of the plain date that was written —
+// e.g. an intended "2026-08-17" becomes "2026-08-16T18:30:00.000Z". That
+// silently broke same-day lookups (the Student Portal's "already punched in
+// today" check, the attendance calendar). A leading apostrophe is the
+// standard Sheets idiom for "store this as literal text" — it's a formatting
+// hint only, never part of the stored/read value.
+function preventDateAutoConvert_(value) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return "'" + value;
+  return value;
+}
+
 function appendRow_(body) {
   const headers = SHEET_CONFIG[body.sheet];
   if (!headers) throw new Error('Unknown sheet: ' + body.sheet);
@@ -157,7 +190,7 @@ function appendRow_(body) {
   row.SubmittedAt = row.SubmittedAt || new Date().toISOString();
 
   const values = headers.map((h) => {
-    if (row[h] !== undefined) return row[h];
+    if (row[h] !== undefined) return preventDateAutoConvert_(row[h]);
     if (h === 'Status') return 'New';
     if (h === 'Published' || h === 'Highlighted') return false;
     return '';
@@ -189,7 +222,7 @@ function updateRow_(body) {
   const updated = {};
   headers.forEach((h, c) => {
     if (patch[h] !== undefined) {
-      sheet.getRange(found.rowNumber, c + 1).setValue(patch[h]);
+      sheet.getRange(found.rowNumber, c + 1).setValue(preventDateAutoConvert_(patch[h]));
       updated[h] = patch[h];
     } else {
       updated[h] = found.rowValues[c] instanceof Date ? found.rowValues[c].toISOString() : found.rowValues[c];

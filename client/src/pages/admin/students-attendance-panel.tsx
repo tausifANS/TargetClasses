@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useStudentsList, useAttendanceList } from '@/hooks/use-admin';
 import { formatDateDMY, matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
@@ -22,6 +23,7 @@ interface AttendanceRow {
   Date: string;
   PunchIn?: string;
   PunchOut?: string;
+  PhotoUrl?: string;
 }
 
 export function StudentsPanel() {
@@ -80,6 +82,7 @@ export function StudentsPanel() {
 export function AttendancePanel() {
   const { data, isLoading } = useAttendanceList<AttendanceRow>(true);
   const [search, setSearch] = useState('');
+  const [preview, setPreview] = useState<AttendanceRow | null>(null);
   const rows = data ?? [];
   const filtered = rows.filter((r) => matchesSearch(r, search));
 
@@ -103,6 +106,7 @@ export function AttendancePanel() {
           <table className="w-full text-left text-sm">
             <thead className="bg-secondary/60 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-4 py-3">Photo</th>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Punch In</th>
@@ -112,6 +116,17 @@ export function AttendancePanel() {
             <tbody>
               {filtered.map((r) => (
                 <tr key={r.Id} className="border-t border-border">
+                  <td className="px-4 py-3">
+                    {r.PhotoUrl ? (
+                      <button type="button" onClick={() => setPreview(r)} className="block overflow-hidden rounded-lg ring-1 ring-border transition-opacity hover:opacity-80">
+                        <img src={r.PhotoUrl} alt={`${r.StudentName || r.StudentId} punch-in verification`} className="size-10 object-cover" />
+                      </button>
+                    ) : (
+                      <span className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                        <Camera className="size-4" />
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-medium">{r.StudentName || r.StudentId}</td>
                   <td className="px-4 py-3">{formatDateDMY(r.Date)}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.PunchIn ? new Date(r.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
@@ -122,6 +137,16 @@ export function AttendancePanel() {
           </table>
         )}
       </div>
+
+      <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogTitle>{preview?.StudentName || preview?.StudentId} — {preview ? formatDateDMY(preview.Date) : ''}</DialogTitle>
+          {preview?.PhotoUrl && <img src={preview.PhotoUrl} alt="Punch-in verification" className="w-full rounded-xl" />}
+          <p className="text-center text-xs text-muted-foreground">
+            Punched in at {preview?.PunchIn ? new Date(preview.PunchIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

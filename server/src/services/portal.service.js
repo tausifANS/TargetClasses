@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import * as sheetsService from './sheets.service.js';
+import { compressToDataUrl, dataUrlToBuffer } from '../utils/imageStorage.js';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -77,22 +78,43 @@ export async function createStudentAccount({ applicationId, studentName, classNa
 
 const todayDateOnly = () => new Date().toISOString().slice(0, 10);
 
+// Older rows (written before Code.gs started forcing the Date column to
+// plain text) may still have round-tripped through Sheets' auto date
+// conversion — e.g. an intended "2026-08-17" comes back as
+// "2026-08-16T18:30:00.000Z" (midnight IST, shifted to UTC). Recover the
+// calendar date that was actually meant so lookups/display stay correct for
+// that historical data too, not just rows written after the Apps Script fix.
+export function normalizeDateOnly(value) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  return new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
 export async function getTodayAttendance(studentId) {
   const rows = await sheetsService.listRows('Attendance');
   const today = todayDateOnly();
-  return rows.find((r) => r.StudentId === studentId && r.Date === today) || null;
+  return rows.find((r) => r.StudentId === studentId && normalizeDateOnly(r.Date) === today) || null;
 }
 
 export async function punchIn(studentId, photo) {
   const existing = await getTodayAttendance(studentId);
   if (existing) return { alreadyPunched: true, record: existing };
 
+  // The client sends a raw <canvas> capture — re-compress it through the same
+  // size-guaranteed path as every other Sheets-stored photo so it can never
+  // exceed the 50,000-character Google Sheets cell limit (a canvas JPEG at
+  // 0.7 quality routinely lands well above that as base64).
+  const photoUrl = photo ? await compressToDataUrl(dataUrlToBuffer(photo)) : '';
+
   const record = await sheetsService.appendRow('Attendance', {
     StudentId: studentId,
     Date: todayDateOnly(),
     PunchIn: new Date().toISOString(),
     PunchOut: '',
-    PhotoUrl: photo || '',
+    PhotoUrl: photoUrl,
   });
   return { alreadyPunched: false, record };
 }
@@ -112,5 +134,6 @@ export async function getAttendanceHistory(studentId) {
   const rows = await sheetsService.listRows('Attendance');
   return rows
     .filter((r) => r.StudentId === studentId)
+    .map((r) => ({ ...r, Date: normalizeDateOnly(r.Date) }))
     .sort((a, b) => (a.Date < b.Date ? 1 : -1));
 }

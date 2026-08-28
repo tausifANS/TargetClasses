@@ -10,7 +10,7 @@ export const list = asyncHandler(async (_req, res) => {
 
   const nameById = new Map(students.map((s) => [s.StudentId, s.StudentName]));
   const enriched = attendance
-    .map((row) => ({ ...row, StudentName: nameById.get(row.StudentId) || row.StudentId }))
+    .map((row) => ({ ...row, StudentName: nameById.get(row.StudentId) || row.StudentId, Date: portalService.normalizeDateOnly(row.Date) }))
     .sort((a, b) => (a.Date < b.Date ? 1 : -1));
 
   res.json({ success: true, data: enriched });
