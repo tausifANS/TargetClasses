@@ -1,0 +1,35 @@
+# Supabase
+SUPABASE_URL=https://kvbczdxdsktfkphzxdhs.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2YmN6ZHhkc2t0ZnhwaHp4ZGhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTg4NTAsImV4cCI6MjA5OTUzNDg1MH0.kOioUEQyGfUIP5gsCh0Gj6qgECxznkl2nMQlSDtLc4o
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2YmN6ZHhkc2t0ZnhwaHp4ZGhzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mzk1ODg1MCwiZXhwIjoyMDk5NTM0ODUwfQ.Msg5EL9W3WGqKC2xHXQOZl_Yec8jqGm9dMpgImY05ig
+
+# Google Sheets backend (see database/google-apps-script/Code.gs)
+# GOOGLE_SHEETS_WEBAPP_URL is empty until you deploy the Apps Script and paste the Web App URL here.
+GOOGLE_SHEETS_WEBAPP_URL=https://script.google.com/macros/s/AKfycbz7Cd55E9CTFq_oNXftIrW0BihV70-HpjqsGcFsnO0y8RBRcbTzEgf4qKGDtGxXZTIZqA/exec
+GOOGLE_SHEETS_API_SECRET=0893aef82a395e6039260a9cd0fc6b615833d4ecb63e2775
+
+# App
+NODE_ENV=development
+PORT=5000
+CLIENT_URL=http://localhost:5173
+
+# JWT
+JWT_ACCESS_SECRET=b10a8226c3d16589c5ece2a421fc1ecf4349fbc41e2a7c8ed5a5bd6ec2d2438e9f04bc3ad019c72597c9587e2b1519e1
+JWT_REFRESH_SECRET=163f494826f50ae93bb37dbb98a35b5b69ece70df8bfb52ea196083dcebcbcdfc834a2e54abd7a9752ebd4635faee2dd
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
+# Institute contact info
+INSTITUTE_NAME=Target Classes
+INSTITUTE_PHONE=+917388271963
+INSTITUTE_WHATSAPP=+917388271963
+INSTITUTE_EMAIL=tausif5310ans@gmail.com
+INSTITUTE_ADDRESS=Lar Town, Near Thana, Deoria, Uttar Pradesh
+INSTITUTE_YOUTUBE=https://youtube.com/@target786?si=0Jn3DJf4g2YXgBes
+
+# Email (Nodemailer) - fill in when ready (e.g. Gmail App Password or SMTP relay)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tausif5310ans@gmail.com
+SMTP_PASS=
+SMTP_FROM="Target Classes" <tausif5310ans@gmail.com>
