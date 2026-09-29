@@ -6,7 +6,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 const faqs = [
   {
     q: 'What classes does Target Classes currently offer?',
-    a: 'We currently offer Nursery, LKG, and UKG, with more classes being added as we grow.',
+    a: 'We offer board-focused coaching for Class 9th–12th in Physics, Chemistry, Maths & Biology, along with a nurturing Nursery–UKG program for our youngest learners.',
   },
   {
     q: 'How do I apply for admission?',
@@ -24,7 +24,7 @@ const faqs = [
 
 export function FaqPreview() {
   return (
-    <section className="bg-secondary/40 py-24">
+    <section className="bg-secondary/40 py-16 sm:py-20 lg:py-28">
       <div className="section-container grid gap-12 lg:grid-cols-[1fr_1.4fr]">
         <div>
           <span className="text-sm font-semibold uppercase tracking-widest text-gold">FAQs</span>

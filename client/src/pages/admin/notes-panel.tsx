@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
+import { useEffect, useState } from 'react';
+import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete, useAdminMe } from '@/hooks/use-admin';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminSearchInput } from '@/components/admin/search-input';
 import { Plus, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,8 +25,14 @@ export function NotesPanel() {
   const create = useAdminCreate('notes', '/admin/notes');
   const update = useAdminUpdate('notes', '/admin/notes');
   const remove = useAdminDelete('notes', '/admin/notes');
+  const { data: me } = useAdminMe(true);
+  const isTeacher = me?.accountRole === 'teacher';
 
   const filtered = (data ?? []).filter(r => matchesSearch(r, search));
+
+  useEffect(() => {
+    if (isTeacher && me?.className) setClassName(me.className);
+  }, [isTeacher, me?.className]);
 
   const handleCreate = () => {
     if (!title || !className || !fileUrl) { toast.error('Title, class and file URL required'); return; }
@@ -44,17 +52,21 @@ export function NotesPanel() {
 
       <div className="mt-5 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Note title" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <select value={className} onChange={e => setClassName(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">Select class</option>
-            {COACHING_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
-          </select>
+          <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Note title" />
+          <Select value={className} onValueChange={setClassName} disabled={isTeacher}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
+            <SelectContent>
+              {COACHING_CLASSES.map(c => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-        <select value={subject} onChange={e => setSubject(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-          <option value="">Select subject</option>
-          {Subjects.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <input value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="PDF / Google Drive link" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+        <Select value={subject} onValueChange={setSubject}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Select subject" /></SelectTrigger>
+          <SelectContent>
+            {Subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Input value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="PDF / Google Drive link" />
         <Button onClick={handleCreate} size="sm" variant="gold" disabled={create.isPending}>
           <Plus className="size-4" /> Share Note
         </Button>

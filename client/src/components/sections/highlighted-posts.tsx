@@ -12,7 +12,7 @@ export function HighlightedPosts() {
   if (highlighted.length === 0) return null;
 
   return (
-    <section className="section-container py-24">
+    <section className="section-container py-16 sm:py-20 lg:py-28">
       <div className="flex flex-col items-center gap-4 text-center">
         <span className="text-sm font-semibold uppercase tracking-widest text-gold">Latest From Us</span>
         <h2 className="font-display text-3xl font-bold sm:text-4xl">Announcements</h2>
@@ -26,10 +26,16 @@ export function HighlightedPosts() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="overflow-hidden rounded-2xl border-2 border-gold/40 bg-card shadow-lg shadow-gold/10"
+            className="group overflow-hidden rounded-2xl border-2 border-gold/40 bg-card shadow-lg shadow-gold/10 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-gold/20"
           >
             {post.ImageUrl ? (
-              <img src={resolveMediaUrl(post.ImageUrl)} alt={post.Title} className="aspect-video w-full object-cover" />
+              <div className="overflow-hidden">
+                <img
+                  src={resolveMediaUrl(post.ImageUrl)}
+                  alt={post.Title}
+                  className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
             ) : (
               <div className="flex aspect-video w-full items-center justify-center bg-gold/10 text-gold">
                 <Megaphone className="size-10" />

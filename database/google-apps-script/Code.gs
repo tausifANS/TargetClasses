@@ -72,8 +72,12 @@ const SHEET_CONFIG = {
   // Likes — gallery/post like tracking (VisitorHash = IP-based unique hash).
   Likes: ['Id', 'SubmittedAt', 'TargetId', 'TargetType', 'VisitorHash'],
 
-  // Admin accounts — additional admin/sub-admin accounts managed by super admin.
-  AdminAccounts: ['Id', 'SubmittedAt', 'Username', 'PasswordHash', 'Role', 'Status'],
+  // Admin accounts — additional admin/teacher accounts managed by the super admin.
+  // ClassName: the batch a teacher account is scoped to (blank for full admins).
+  // Permissions: comma-separated page keys a teacher account may access, e.g.
+  // "students,attendance,questions" (blank/ignored for full admins, who always
+  // have full access).
+  AdminAccounts: ['Id', 'SubmittedAt', 'Username', 'PasswordHash', 'Role', 'Status', 'ClassName', 'Permissions'],
 
   // Key/value runtime settings editable from the Admin Portal (e.g. SMTP
   // credentials) — lets the admin rotate a Gmail App Password without

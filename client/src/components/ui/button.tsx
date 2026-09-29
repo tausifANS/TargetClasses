@@ -12,6 +12,7 @@ const buttonVariants = cva(
         gold: 'bg-gold text-gold-foreground shadow-md shadow-gold/30 hover:shadow-lg hover:shadow-gold/40 hover:-translate-y-0.5',
         outline: 'border border-border bg-transparent hover:bg-accent hover:text-accent-foreground',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
+        destructive: 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/20 hover:bg-destructive/90 hover:shadow-lg hover:shadow-destructive/30',
         link: 'text-primary underline-offset-4 hover:underline',
         glass: 'glass text-white hover:bg-white/20',
       },

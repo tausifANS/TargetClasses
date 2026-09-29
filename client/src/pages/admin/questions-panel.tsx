@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
+import { useEffect, useState } from 'react';
+import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete, useAdminMe } from '@/hooks/use-admin';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdminSearchInput } from '@/components/admin/search-input';
 import { Plus, Trash2, Edit, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -37,8 +40,14 @@ export function QuestionsPanel() {
   const create = useAdminCreate('questions', '/admin/questions');
   const update = useAdminUpdate('questions', '/admin/questions');
   const remove = useAdminDelete('questions', '/admin/questions');
+  const { data: me } = useAdminMe(true);
+  const isTeacher = me?.accountRole === 'teacher';
 
   const filtered = (data ?? []).filter(r => matchesSearch(r, search));
+
+  useEffect(() => {
+    if (isTeacher && me?.className) setClassName(me.className);
+  }, [isTeacher, me?.className]);
 
   const handleCreate = () => {
     if (!title || !className) { toast.error('Title and class are required'); return; }
@@ -80,18 +89,20 @@ export function QuestionsPanel() {
       {/* Create Form */}
       <div className="mt-5 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Question title" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <select value={className} onChange={e => setClassName(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">Select class</option>
-            {COACHING_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
-          </select>
+          <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Question title" />
+          <Select value={className} onValueChange={setClassName} disabled={isTeacher}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
+            <SelectContent>
+              {COACHING_CLASSES.map(c => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setType('mcq')} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${type === 'mcq' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>MCQ</button>
           <button onClick={() => setType('written')} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${type === 'written' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>Written</button>
         </div>
-        {type === 'mcq' && <textarea value={options} onChange={e => setOptions(e.target.value)} placeholder="Options (one per line: A. Option1&#10;B. Option2&#10;C. Option3&#10;D. Option4)" rows={4} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />}
-        <input value={answer} onChange={e => setAnswer(e.target.value)} placeholder={type === 'mcq' ? 'Correct answer (e.g. A)' : 'Model answer (optional)'} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+        {type === 'mcq' && <Textarea value={options} onChange={e => setOptions(e.target.value)} placeholder="Options (one per line: A. Option1&#10;B. Option2&#10;C. Option3&#10;D. Option4)" rows={4} />}
+        <Input value={answer} onChange={e => setAnswer(e.target.value)} placeholder={type === 'mcq' ? 'Correct answer (e.g. A)' : 'Model answer (optional)'} />
         <div>
           <p className="mb-1 text-xs text-muted-foreground">Subject:</p>
           {subjects}
@@ -111,7 +122,7 @@ export function QuestionsPanel() {
               <div className="min-w-0 flex-1 space-y-1">
                 {editingId === q.Id ? (
                   <div className="space-y-2">
-                    <input value={editFields.Title ?? q.Title} onChange={e => setEditFields(p => ({ ...p, Title: e.target.value }))} className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm" />
+                    <Input value={editFields.Title ?? q.Title} onChange={e => setEditFields(p => ({ ...p, Title: e.target.value }))} />
                     <div className="flex gap-2">
                       <Badge variant={q.Type === 'mcq' ? 'default' : 'muted'}>{q.Type.toUpperCase()}</Badge>
                       <span className="text-xs text-muted-foreground">Class {q.ClassName}</span>

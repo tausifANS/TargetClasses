@@ -1,8 +1,12 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import * as sheetsService from './sheets.service.js';
 import { compressToDataUrl, dataUrlToBuffer } from '../utils/imageStorage.js';
+import { signResetToken, verifyAccessToken } from '../utils/jwt.js';
+import { ApiError } from '../utils/ApiError.js';
 
 const BCRYPT_ROUNDS = 10;
+const sha256 = (value) => crypto.createHash('sha256').update(value || '').digest('hex');
 
 export const hashPassword = (plain) => bcrypt.hash(plain, BCRYPT_ROUNDS);
 export const comparePassword = (plain, hash) => bcrypt.compare(plain, hash || '');
@@ -39,6 +43,48 @@ export function sanitizeAccount(account) {
     parentPhone: account.ParentPhone,
     status: account.Status,
   };
+}
+
+// ---- Password reset (forgot password) ----
+
+/**
+ * Stateless reset token — no separate storage in the Sheet (updating the
+ * Apps Script's column config would require redeploying it). The token
+ * embeds a hash of the account's *current* PasswordHash, so it stops
+ * verifying the moment the password actually changes — an approximation of
+ * single-use without needing server-side token storage.
+ */
+export async function createPasswordResetToken(studentId) {
+  const account = await findStudentAccountByStudentId(studentId);
+  if (!account) return null; // caller always responds generically — don't leak account existence
+  if (String(account.Status ?? '').toLowerCase() === 'inactive') return null;
+
+  const rawToken = signResetToken({
+    sub: account.StudentId,
+    purpose: 'student-password-reset',
+    pwv: sha256(account.PasswordHash),
+  });
+  return { rawToken, account };
+}
+
+export async function resetPasswordWithToken(rawToken, newPassword) {
+  let payload;
+  try {
+    payload = verifyAccessToken(rawToken);
+  } catch {
+    throw ApiError.badRequest('This reset link is invalid or has expired');
+  }
+  if (payload.purpose !== 'student-password-reset') {
+    throw ApiError.badRequest('This reset link is invalid or has expired');
+  }
+
+  const account = await findStudentAccountByStudentId(payload.sub);
+  if (!account || sha256(account.PasswordHash) !== payload.pwv) {
+    throw ApiError.badRequest('This reset link is invalid or has expired');
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await sheetsService.updateRow('StudentAccounts', account.Id, { PasswordHash: passwordHash });
 }
 
 /** Generates the next sequential Student ID, e.g. TC-2026-004. */

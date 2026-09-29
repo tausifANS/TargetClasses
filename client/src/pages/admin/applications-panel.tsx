@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePortalApplicationsList, useApprovePortalApplication, useRejectPortalApplication } from '@/hooks/use-admin';
 import { apiErrorMessage } from '@/lib/api';
-import { formatDateDMY, matchesSearch } from '@/lib/utils';
+import { formatDateDMY, formatDateTimeDMY, matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
 import { COACHING_CLASSES } from '@/constants/site';
 
@@ -37,7 +37,7 @@ export function ApplicationsPanel() {
   const rows = data ?? [];
   const filtered = rows.filter((r) => {
     if (!matchesSearch(r, search)) return false;
-    if (filterClass !== 'all' && r.ClassName !== filterClass) return false;
+    if (filterClass !== 'all' && String(r.ClassName) !== filterClass) return false;
     if (filterStatus !== 'all' && r.Status !== filterStatus) return false;
     if (filterDateFrom && r.SubmittedAt < filterDateFrom) return false;
     if (filterDateTo && r.SubmittedAt.slice(0, 10) > filterDateTo) return false;
@@ -74,17 +74,17 @@ export function ApplicationsPanel() {
 
       <AdminSearchInput value={search} onChange={setSearch} placeholder="Search applications…" />
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Filter className="size-3.5" /> Filters:</div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <div className="col-span-2 flex items-center gap-1.5 text-xs text-muted-foreground sm:col-span-1"><Filter className="size-3.5" /> Filters:</div>
         <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Class" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-full text-xs sm:h-8 sm:w-auto sm:min-w-[130px]"><SelectValue placeholder="Class" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Classes</SelectItem>
             {COACHING_CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-full text-xs sm:h-8 sm:w-auto sm:min-w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="Pending">Pending</SelectItem>
@@ -93,12 +93,12 @@ export function ApplicationsPanel() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">From:</span>
-          <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 w-[140px] text-xs" />
+          <span className="shrink-0 text-xs text-muted-foreground">From:</span>
+          <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-9 w-full text-xs sm:h-8 sm:w-auto" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">To:</span>
-          <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 w-[140px] text-xs" />
+          <span className="shrink-0 text-xs text-muted-foreground">To:</span>
+          <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-9 w-full text-xs sm:h-8 sm:w-auto" />
         </div>
       </div>
 
@@ -112,6 +112,7 @@ export function ApplicationsPanel() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1 text-sm">
                 <p className="font-display font-semibold">{app.StudentName} <span className="font-normal text-muted-foreground">— Class {app.ClassName}</span></p>
+                <p className="text-muted-foreground">Applied: {formatDateTimeDMY(app.SubmittedAt)}</p>
                 <p className="text-muted-foreground">DOB: {formatDateDMY(app.DOB)} &middot; Subjects: {app.Subjects || '—'}</p>
                 <p className="text-muted-foreground">Parent: {app.ParentName} &middot; {app.ParentPhone}</p>
                 <p className="text-muted-foreground">Email: {app.Email}</p>
@@ -124,7 +125,7 @@ export function ApplicationsPanel() {
                     <Button size="sm" variant="gold" onClick={() => handleApprove(app.Id)} disabled={approve.isPending}>
                       <Check className="size-4" /> Approve
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleReject(app.Id)} disabled={reject.isPending}>
+                    <Button size="sm" variant="destructive" onClick={() => handleReject(app.Id)} disabled={reject.isPending}>
                       <X className="size-4" /> Reject
                     </Button>
                   </>

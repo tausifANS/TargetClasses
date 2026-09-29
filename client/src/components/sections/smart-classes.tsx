@@ -10,9 +10,9 @@ const features = [
 
 export function SmartClasses() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0E1930] via-[#16305C] to-[#0E1930] py-24">
-      <div className="pointer-events-none absolute -right-40 -top-40 size-96 rounded-full bg-gold/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 size-80 rounded-full bg-[#3B6EA5]/15 blur-3xl" />
+    <section className="dark relative overflow-hidden bg-gradient-to-br from-card via-secondary to-card py-16 sm:py-20 lg:py-28">
+      <div className="pointer-events-none absolute -right-40 -top-40 size-96 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -left-32 size-80 rounded-full bg-chart-3/15 blur-3xl" />
 
       <div className="section-container relative z-10">
         <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -22,22 +22,22 @@ export function SmartClasses() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-[#E8C766]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
               <MonitorPlay className="size-4" /> Smart Education
             </span>
-            <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            <h2 className="mt-5 font-display text-3xl font-bold text-foreground sm:text-4xl lg:text-5xl">
               Digital Smart Classes with{' '}
-              <span className="text-[#E8C766]">TV Board</span>
+              <span className="text-primary">TV Board</span>
             </h2>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/75">
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
               At Target Classes, learning goes beyond chalk and talk. Our
-              <strong className="text-white"> interactive TV Board </strong>
+              <strong className="text-foreground"> interactive TV Board </strong>
               brings every topic to life with animations, diagrams, and visual
               explanations — so students don't just memorise, they
-              <strong className="text-white"> understand </strong>
+              <strong className="text-foreground"> understand </strong>
               the concept deeply.
             </p>
-            <p className="mt-4 max-w-lg text-white/60">
+            <p className="mt-4 max-w-lg text-muted-foreground">
               Whether it's a complex Physics diagram, a Chemistry reaction, or a
               Maths theorem — our smart board makes every lesson engaging, visual,
               and easy to grasp for students of all ages.
@@ -51,10 +51,10 @@ export function SmartClasses() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: 0.2 + i * 0.08 }}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card/60 p-4 text-center"
                 >
-                  <f.icon className="size-6 text-[#E8C766]" />
-                  <span className="text-xs font-medium text-white/80">{f.label}</span>
+                  <f.icon className="size-6 text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">{f.label}</span>
                 </motion.div>
               ))}
             </div>
@@ -65,19 +65,24 @@ export function SmartClasses() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="relative mx-auto flex aspect-[4/3] w-full max-w-lg items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5"
+            className="relative mx-auto flex aspect-[4/3] w-full max-w-lg items-center justify-center overflow-hidden rounded-3xl border border-border bg-card/60 shadow-2xl shadow-black/20"
           >
-            <div className="flex flex-col items-center gap-4 p-8 text-center">
-              <div className="flex size-20 items-center justify-center rounded-2xl bg-gold/15">
-                <MonitorPlay className="size-10 text-[#E8C766]" />
-              </div>
-              <p className="font-display text-xl font-bold text-white">Interactive TV Board</p>
-              <p className="max-w-xs text-sm text-white/60">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(232,199,102,0.12),transparent_65%)]" />
+            <div className="relative flex flex-col items-center gap-4 p-8 text-center">
+              <motion.div
+                className="flex size-20 items-center justify-center rounded-2xl bg-primary/15"
+                animate={{ boxShadow: ['0 0 0 0 rgba(232,199,102,0.35)', '0 0 0 14px rgba(232,199,102,0)'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+              >
+                <MonitorPlay className="size-10 text-primary" />
+              </motion.div>
+              <p className="font-display text-xl font-bold text-foreground">Interactive TV Board</p>
+              <p className="max-w-xs text-sm text-muted-foreground">
                 Animated lessons, real-time diagrams, and visual explanations that make every concept click.
               </p>
               <div className="mt-2 flex gap-3">
                 {['Physics', 'Chemistry', 'Maths', 'Biology'].map((s) => (
-                  <span key={s} className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80">{s}</span>
+                  <span key={s} className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">{s}</span>
                 ))}
               </div>
             </div>

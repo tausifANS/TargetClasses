@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
+import { useEffect, useState } from 'react';
+import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete, useAdminMe } from '@/hooks/use-admin';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { AdminSearchInput } from '@/components/admin/search-input';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,8 +29,14 @@ export function ResultsPanel() {
   const create = useAdminCreate('results', '/admin/results');
   const update = useAdminUpdate('results', '/admin/results');
   const remove = useAdminDelete('results', '/admin/results');
+  const { data: me } = useAdminMe(true);
+  const isTeacher = me?.accountRole === 'teacher';
 
   const filtered = (data ?? []).filter(r => matchesSearch(r, search));
+
+  useEffect(() => {
+    if (isTeacher && me?.className) setClassName(me.className);
+  }, [isTeacher, me?.className]);
 
   const handleCreate = () => {
     if (!studentName || !className) { toast.error('Student name and class required'); return; }
@@ -47,49 +56,63 @@ export function ResultsPanel() {
 
       <div className="mt-5 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <input value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Student name" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <select value={className} onChange={e => setClassName(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">Select class</option>
-            {COACHING_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
-          </select>
+          <Input value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Student name" />
+          <Select value={className} onValueChange={setClassName} disabled={isTeacher}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
+            <SelectContent>
+              {COACHING_CLASSES.map(c => <SelectItem key={c} value={c}>Class {c}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <select value={subject} onChange={e => setSubject(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">Select subject</option>
-            {Subjects.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <input value={examName} onChange={e => setExamName(e.target.value)} placeholder="Exam name (e.g. Mid-Term)" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          <Select value={subject} onValueChange={setSubject}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Select subject" /></SelectTrigger>
+            <SelectContent>
+              {Subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Input value={examName} onChange={e => setExamName(e.target.value)} placeholder="Exam name (e.g. Mid-Term)" />
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <input value={marks} onChange={e => setMarks(e.target.value)} placeholder="Marks obtained" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <input value={totalMarks} onChange={e => setTotalMarks(e.target.value)} placeholder="Total marks" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <input value={term} onChange={e => setTerm(e.target.value)} placeholder="Term (e.g. First Half)" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          <Input value={marks} onChange={e => setMarks(e.target.value)} placeholder="Marks obtained" />
+          <Input value={totalMarks} onChange={e => setTotalMarks(e.target.value)} placeholder="Total marks" />
+          <Input value={term} onChange={e => setTerm(e.target.value)} placeholder="Term (e.g. First Half)" />
         </div>
         <Button onClick={handleCreate} size="sm" variant="gold" disabled={create.isPending}>
           <Plus className="size-4" /> Upload Result
         </Button>
       </div>
 
-      <div className="mt-5 overflow-x-auto">
+      <div className="mt-5">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {!isLoading && filtered.length === 0 && <p className="text-sm text-muted-foreground">No results uploaded yet.</p>}
         {!isLoading && filtered.length > 0 && (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b text-xs uppercase text-muted-foreground"><tr><th className="px-3 py-2">Student</th><th className="px-3 py-2">Class</th><th className="px-3 py-2">Subject</th><th className="px-3 py-2">Exam</th><th className="px-3 py-2">Marks</th><th className="px-3 py-2">Status</th><th className="px-3 py-2"></th></tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead>Class</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead>Exam</TableHead>
+                <TableHead>Marks</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map(r => (
-                <tr key={r.Id} className="border-b">
-                  <td className="px-3 py-2 font-medium">{r.StudentName}</td>
-                  <td className="px-3 py-2">{r.ClassName}</td>
-                  <td className="px-3 py-2">{r.Subject}</td>
-                  <td className="px-3 py-2">{r.ExamName}</td>
-                  <td className="px-3 py-2">{r.Marks}/{r.TotalMarks}</td>
-                  <td className="px-3 py-2"><Badge variant={r.Published ? 'default' : 'muted'} className="cursor-pointer" onClick={() => update.mutate({ id: r.Id, patch: { Published: r.Published !== true && r.Published !== 'true' } })}>{r.Published ? 'Published' : 'Draft'}</Badge></td>
-                  <td className="px-3 py-2"><Button size="icon" variant="ghost" onClick={() => { if (confirm('Delete?')) remove.mutate(r.Id); }}><Trash2 className="size-4 text-destructive" /></Button></td>
-                </tr>
+                <TableRow key={r.Id}>
+                  <TableCell className="font-medium">{r.StudentName}</TableCell>
+                  <TableCell>{r.ClassName}</TableCell>
+                  <TableCell>{r.Subject}</TableCell>
+                  <TableCell>{r.ExamName}</TableCell>
+                  <TableCell>{r.Marks}/{r.TotalMarks}</TableCell>
+                  <TableCell><Badge variant={r.Published ? 'default' : 'muted'} className="cursor-pointer" onClick={() => update.mutate({ id: r.Id, patch: { Published: r.Published !== true && r.Published !== 'true' } })}>{r.Published ? 'Published' : 'Draft'}</Badge></TableCell>
+                  <TableCell><Button size="icon" variant="ghost" onClick={() => { if (confirm('Delete?')) remove.mutate(r.Id); }}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

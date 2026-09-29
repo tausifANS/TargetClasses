@@ -15,6 +15,18 @@ export function formatDateDMY(value: unknown): string {
   return `${dd}-${mm}-${d.getFullYear()}`;
 }
 
+/** Formats a date string/number as dd-mm-yyyy, HH:MM — used where the time of day matters (e.g. application submission timestamps). Returns the raw value if it isn't a valid date. */
+export function formatDateTimeDMY(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—';
+  const d = new Date(value as string | number);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}-${mm}-${d.getFullYear()}, ${hh}:${min}`;
+}
+
 /** True if a field name looks like it holds a date (DOB, EventDate, SubmittedAt, ScheduledAt, plain Date). */
 export function looksLikeDateField(key: string): boolean {
   return key === 'DOB' || key === 'Date' || /Date$|At$/.test(key);

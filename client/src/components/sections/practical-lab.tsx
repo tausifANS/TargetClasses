@@ -12,7 +12,7 @@ const equipment = [
 
 export function PracticalLab() {
   return (
-    <section className="section-container py-24">
+    <section className="section-container py-16 sm:py-20 lg:py-28">
       <div className="grid items-center gap-12 lg:grid-cols-2">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

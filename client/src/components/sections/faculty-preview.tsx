@@ -12,7 +12,7 @@ export function FacultyPreview() {
   if (!teachers || teachers.length === 0) return null;
 
   return (
-    <section className="bg-secondary/40 py-24">
+    <section className="bg-secondary/40 py-16 sm:py-20 lg:py-28">
       <div className="section-container">
         <div className="flex flex-col items-center gap-4 text-center">
           <span className="text-sm font-semibold uppercase tracking-widest text-gold">Meet Our Faculty</span>

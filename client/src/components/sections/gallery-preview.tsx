@@ -13,7 +13,7 @@ const items = [
 
 export function GalleryPreview() {
   return (
-    <section className="section-container py-24">
+    <section className="section-container py-16 sm:py-20 lg:py-28">
       <div className="flex flex-col items-center gap-4 text-center">
         <span className="text-sm font-semibold uppercase tracking-widest text-gold">Life at Target Classes</span>
         <h2 className="font-display text-3xl font-bold sm:text-4xl">Moments Worth Remembering</h2>

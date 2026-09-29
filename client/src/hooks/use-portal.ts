@@ -27,6 +27,7 @@ export interface AttendanceRecord {
   Date: string;
   PunchIn?: string;
   PunchOut?: string;
+  PhotoUrl?: string;
 }
 
 export function useIsStudentLoggedIn() {
@@ -40,6 +41,18 @@ export function usePortalLogin() {
       return res.data.data;
     },
     onSuccess: (data) => setToken('student', data.accessToken),
+  });
+}
+
+export function usePortalForgotPassword() {
+  return useMutation({
+    mutationFn: async (data: { studentId: string }) => (await api.post('/portal/forgot-password', data)).data,
+  });
+}
+
+export function usePortalResetPassword() {
+  return useMutation({
+    mutationFn: async (data: { token: string; newPassword: string }) => (await api.post('/portal/reset-password', data)).data,
   });
 }
 
@@ -91,6 +104,33 @@ export function usePunchOut() {
   return useMutation({
     mutationFn: async () => (await api.post('/portal/attendance/punch-out')).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['portal', 'attendance'] }),
+  });
+}
+
+export function usePortalQuestions(className: string, enabled: boolean) {
+  return useQuery<Array<Record<string, string>>>({
+    queryKey: ['portal', 'questions', className],
+    queryFn: async () => (await api.get(`/questions?className=${encodeURIComponent(className)}`)).data.data ?? [],
+    enabled,
+    retry: false,
+  });
+}
+
+export function usePortalNotes(className: string, enabled: boolean) {
+  return useQuery<Array<Record<string, string>>>({
+    queryKey: ['portal', 'notes', className],
+    queryFn: async () => (await api.get(`/notes?className=${encodeURIComponent(className)}`)).data.data ?? [],
+    enabled,
+    retry: false,
+  });
+}
+
+export function usePortalResults(className: string, enabled: boolean) {
+  return useQuery<Array<Record<string, string>>>({
+    queryKey: ['portal', 'results', className],
+    queryFn: async () => (await api.get(`/results?className=${encodeURIComponent(className)}`)).data.data ?? [],
+    enabled,
+    retry: false,
   });
 }
 

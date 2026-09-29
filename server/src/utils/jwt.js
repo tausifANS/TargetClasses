@@ -24,3 +24,6 @@ export const verifyRefreshToken = (token) => jwt.verify(token, env.JWT_REFRESH_S
  * since it's signed with the same secret.
  */
 export const signAppToken = (payload) => jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: '12h' });
+
+/** Short-lived token for "forgot password" email links. Verified with verifyAccessToken(). */
+export const signResetToken = (payload) => jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: '30m' });

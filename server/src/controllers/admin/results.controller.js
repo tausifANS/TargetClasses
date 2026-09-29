@@ -2,22 +2,29 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { ApiError } from '../../utils/ApiError.js';
 import * as sheetsService from '../../services/sheets.service.js';
 import { v4 as uuid } from 'uuid';
+import { isTeacher, scopeRowsToTeacher, assertRowInTeacherScope } from '../../utils/teacherScope.js';
 
-export const list = asyncHandler(async (_req, res) => {
+async function findOwn(id) {
   const rows = await sheetsService.listRows('Results');
-  res.json({ success: true, data: rows });
+  return rows.find((r) => r.Id === id);
+}
+
+export const list = asyncHandler(async (req, res) => {
+  const rows = await sheetsService.listRows('Results');
+  res.json({ success: true, data: scopeRowsToTeacher(req, rows) });
 });
 
 export const create = asyncHandler(async (req, res) => {
   if (!req.body.studentName || !req.body.className) {
     throw ApiError.badRequest('Student name and class are required');
   }
+  const className = isTeacher(req) ? req.user.className : req.body.className;
 
   const data = await sheetsService.appendRow('Results', {
     Id: uuid(),
     SubmittedAt: new Date().toISOString(),
     StudentName: req.body.studentName,
-    ClassName: req.body.className,
+    ClassName: className,
     Subject: req.body.subject || '',
     Marks: req.body.marks || '',
     TotalMarks: req.body.totalMarks || '',
@@ -29,9 +36,11 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const update = asyncHandler(async (req, res) => {
+  if (isTeacher(req)) assertRowInTeacherScope(req, await findOwn(req.params.id));
+
   const patch = {};
   if (req.body.studentName !== undefined) patch.StudentName = req.body.studentName;
-  if (req.body.className !== undefined) patch.ClassName = req.body.className;
+  if (req.body.className !== undefined && !isTeacher(req)) patch.ClassName = req.body.className;
   if (req.body.subject !== undefined) patch.Subject = req.body.subject;
   if (req.body.marks !== undefined) patch.Marks = req.body.marks;
   if (req.body.totalMarks !== undefined) patch.TotalMarks = req.body.totalMarks;
@@ -44,6 +53,7 @@ export const update = asyncHandler(async (req, res) => {
 });
 
 export const remove = asyncHandler(async (req, res) => {
+  if (isTeacher(req)) assertRowInTeacherScope(req, await findOwn(req.params.id));
   await sheetsService.deleteRow('Results', req.params.id);
   res.json({ success: true });
 });

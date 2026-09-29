@@ -2,22 +2,29 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { ApiError } from '../../utils/ApiError.js';
 import * as sheetsService from '../../services/sheets.service.js';
 import { v4 as uuid } from 'uuid';
+import { isTeacher, scopeRowsToTeacher, assertRowInTeacherScope } from '../../utils/teacherScope.js';
 
-export const list = asyncHandler(async (_req, res) => {
+async function findOwn(id) {
   const rows = await sheetsService.listRows('Notes');
-  res.json({ success: true, data: rows });
+  return rows.find((r) => r.Id === id);
+}
+
+export const list = asyncHandler(async (req, res) => {
+  const rows = await sheetsService.listRows('Notes');
+  res.json({ success: true, data: scopeRowsToTeacher(req, rows) });
 });
 
 export const create = asyncHandler(async (req, res) => {
   if (!req.body.title || !req.body.className || !req.body.fileUrl) {
     throw ApiError.badRequest('Title, class, and file URL are required');
   }
+  const className = isTeacher(req) ? req.user.className : req.body.className;
 
   const data = await sheetsService.appendRow('Notes', {
     Id: uuid(),
     SubmittedAt: new Date().toISOString(),
     Title: req.body.title,
-    ClassName: req.body.className,
+    ClassName: className,
     Subject: req.body.subject || '',
     FileUrl: req.body.fileUrl,
     Published: false,
@@ -26,9 +33,11 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const update = asyncHandler(async (req, res) => {
+  if (isTeacher(req)) assertRowInTeacherScope(req, await findOwn(req.params.id));
+
   const patch = {};
   if (req.body.title !== undefined) patch.Title = req.body.title;
-  if (req.body.className !== undefined) patch.ClassName = req.body.className;
+  if (req.body.className !== undefined && !isTeacher(req)) patch.ClassName = req.body.className;
   if (req.body.subject !== undefined) patch.Subject = req.body.subject;
   if (req.body.fileUrl !== undefined) patch.FileUrl = req.body.fileUrl;
   if (req.body.published !== undefined) patch.Published = req.body.published === 'true' || req.body.published === true;
@@ -38,6 +47,7 @@ export const update = asyncHandler(async (req, res) => {
 });
 
 export const remove = asyncHandler(async (req, res) => {
+  if (isTeacher(req)) assertRowInTeacherScope(req, await findOwn(req.params.id));
   await sheetsService.deleteRow('Notes', req.params.id);
   res.json({ success: true });
 });

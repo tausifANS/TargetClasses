@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Video, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
+import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete, useAdminMe } from '@/hooks/use-admin';
 import { apiErrorMessage } from '@/lib/api';
 import { matchesSearch } from '@/lib/utils';
 import { AdminSearchInput } from '@/components/admin/search-input';
@@ -31,9 +31,16 @@ export function ClassesPanel() {
   const remove = useAdminDelete('classes', '/admin/classes');
   const rows = data ?? [];
 
+  const { data: me } = useAdminMe(true);
+  const isTeacher = me?.accountRole === 'teacher';
+
   const [form, setForm] = useState({ Title: '', Subject: '', ClassName: '', Type: 'Live', Url: '' });
   const [search, setSearch] = useState('');
   const filtered = rows.filter((r) => matchesSearch(r, search));
+
+  useEffect(() => {
+    if (isTeacher && me?.className) setForm((s) => ({ ...s, ClassName: me.className! }));
+  }, [isTeacher, me?.className]);
 
   const handleCreate = async () => {
     if (!form.Title || !form.Subject || !form.ClassName || !form.Url) {
@@ -79,7 +86,7 @@ export function ClassesPanel() {
           <SelectTrigger className="w-full"><SelectValue placeholder="Subject" /></SelectTrigger>
           <SelectContent>{SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
         </Select>
-        <Select value={form.ClassName} onValueChange={(v) => setForm((s) => ({ ...s, ClassName: v }))}>
+        <Select value={form.ClassName} onValueChange={(v) => setForm((s) => ({ ...s, ClassName: v }))} disabled={isTeacher}>
           <SelectTrigger className="w-full"><SelectValue placeholder="Class" /></SelectTrigger>
           <SelectContent>{COACHING_CLASSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>

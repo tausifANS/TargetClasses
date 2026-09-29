@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { FileInput } from '@/components/ui/file-input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
 import { apiErrorMessage, resolveMediaUrl } from '@/lib/api';
 import { matchesSearch } from '@/lib/utils';
@@ -89,11 +92,11 @@ export function PostsPanel() {
         <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
         <Textarea placeholder="What's the announcement?" value={body} onChange={(e) => setBody(e.target.value)} />
         <div className="flex flex-wrap items-center gap-4">
-          <input ref={fileRef} type="file" accept="image/*" className="text-sm" />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={highlighted} onChange={(e) => setHighlighted(e.target.checked)} />
+          <FileInput ref={fileRef} accept="image/*" className="w-auto" />
+          <Label className="flex items-center gap-2 text-sm font-normal">
+            <Checkbox checked={highlighted} onCheckedChange={(checked) => setHighlighted(checked === true)} />
             Highlight this post
-          </label>
+          </Label>
         </div>
         <Button variant="gold" size="sm" onClick={handleCreate} disabled={create.isPending}>
           Publish Post

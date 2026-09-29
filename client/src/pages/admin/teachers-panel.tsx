@@ -4,6 +4,7 @@ import { Users2, Trash2, Pencil, Crown, X, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FileInput } from '@/components/ui/file-input';
 import { useAdminList, useAdminCreate, useAdminUpdate, useAdminDelete } from '@/hooks/use-admin';
 import { apiErrorMessage, resolveMediaUrl } from '@/lib/api';
 import { matchesSearch } from '@/lib/utils';
@@ -57,7 +58,7 @@ function EditRow({ row, onDone }: { row: TeacherRow; onDone: () => void }) {
           <Input placeholder="Position (e.g. Director, Physics Teacher)" value={position} onChange={(e) => setPosition(e.target.value)} />
         </div>
         <Input placeholder="Subjects (comma separated)" value={subjects} onChange={(e) => setSubjects(e.target.value)} />
-        <input ref={fileRef} type="file" accept="image/*" className="text-xs" />
+        <FileInput ref={fileRef} accept="image/*" />
       </div>
       <div className="flex shrink-0 flex-col gap-2">
         <Button size="icon" variant="gold" onClick={handleSave} disabled={update.isPending} aria-label="Save">
@@ -140,7 +141,7 @@ export function TeachersPanel() {
         <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
         <Input placeholder="Position (e.g. Director, Physics Teacher)" value={position} onChange={(e) => setPosition(e.target.value)} />
         <Input placeholder="Subjects (comma separated)" className="sm:col-span-2" value={subjects} onChange={(e) => setSubjects(e.target.value)} />
-        <input ref={fileRef} type="file" accept="image/*" className="text-sm sm:col-span-2" />
+        <FileInput ref={fileRef} accept="image/*" className="sm:col-span-2" />
         <Button variant="gold" size="sm" className="w-fit sm:col-span-2" onClick={handleCreate} disabled={create.isPending}>
           Add Team Member
         </Button>

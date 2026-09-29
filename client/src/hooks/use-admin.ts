@@ -6,11 +6,47 @@ export function useIsAdminLoggedIn() {
   return !!getToken('admin');
 }
 
+export type TeacherPage = 'students' | 'attendance' | 'classes' | 'questions' | 'notes' | 'results' | 'gallery';
+
+export interface AdminMe {
+  username: string;
+  role: string;
+  accountRole: 'admin' | 'teacher';
+  className: string | null;
+  permissions: TeacherPage[] | null;
+  isOwner: boolean;
+}
+
+export function useAdminMe(enabled: boolean) {
+  return useQuery<AdminMe>({
+    queryKey: ['admin', 'me'],
+    queryFn: async () => (await api.get('/admin/me')).data.data,
+    enabled,
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
 export function useAdminLogin() {
   return useMutation({
+    // Two independent admin logins exist server-side: the single owner account
+    // configured via env vars (/admin/login), and any additional accounts
+    // created under Settings → Admin Accounts (/admin/login-account). Try the
+    // owner login first, then fall back so both kinds of accounts work from
+    // one form; surface the fallback's error since it reflects the actual
+    // username being checked against real accounts.
     mutationFn: async (data: { username: string; password: string }) => {
-      const res = await api.post<{ data: { accessToken: string } }>('/admin/login', data);
-      return res.data.data;
+      try {
+        const res = await api.post<{ data: { accessToken: string } }>('/admin/login', data);
+        return res.data.data;
+      } catch (err) {
+        try {
+          const res = await api.post<{ data: { accessToken: string } }>('/admin/login-account', data);
+          return res.data.data;
+        } catch (fallbackErr) {
+          throw fallbackErr ?? err;
+        }
+      }
     },
     onSuccess: (data) => setToken('admin', data.accessToken),
   });
@@ -156,5 +192,45 @@ export function useUpdateSmtpSettings() {
     mutationFn: async (data: { host?: string; port?: string; user?: string; from?: string; password?: string }) =>
       (await api.patch('/admin/settings/smtp', data)).data,
     onSuccess: () => invalidate(queryClient, 'smtp-settings'),
+  });
+}
+
+// ---- Admin Accounts (multi-admin management) ----
+
+export interface AdminAccount {
+  Id: string;
+  Username: string;
+  Role: string;
+  Status: string;
+  SubmittedAt: string;
+  ClassName?: string;
+  Permissions?: TeacherPage[];
+}
+
+export function useAdminAccountsList(enabled: boolean) {
+  return useAdminList<AdminAccount>('accounts', '/admin/accounts', enabled);
+}
+
+export function useCreateAdminAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { username: string; password: string; role: 'admin' | 'teacher'; className?: string; permissions?: TeacherPage[] }) =>
+      (await api.post('/admin/accounts', data)).data,
+    onSuccess: () => invalidate(queryClient, 'accounts'),
+  });
+}
+
+export function useDeleteAdminAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/admin/accounts/${id}`)).data,
+    onSuccess: () => invalidate(queryClient, 'accounts'),
+  });
+}
+
+export function useChangeAdminPassword() {
+  return useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) =>
+      (await api.post('/admin/change-password', data)).data,
   });
 }
