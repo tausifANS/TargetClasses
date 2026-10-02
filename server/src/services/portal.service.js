@@ -100,6 +100,24 @@ function randomPassword() {
   return Math.random().toString(36).slice(2, 6).toUpperCase() + Math.random().toString(36).slice(2, 6);
 }
 
+/**
+ * Admin-triggered credential reset — e.g. the approval email never arrived, or
+ * got lost. Unlike the self-serve forgot-password flow this sets the password
+ * immediately (admin can also hand it to the student directly instead of
+ * relying on email) rather than emailing a reset link. Returns the plaintext
+ * password so the admin UI can display/copy it.
+ */
+export async function adminResetStudentPassword(studentId, newPlainPassword) {
+  const account = await findStudentAccountByStudentId(studentId);
+  if (!account) throw ApiError.notFound('Student account not found');
+
+  const plainPassword = newPlainPassword || randomPassword();
+  const passwordHash = await hashPassword(plainPassword);
+  await sheetsService.updateRow('StudentAccounts', account.Id, { PasswordHash: passwordHash });
+
+  return { plainPassword, account };
+}
+
 /** Creates a StudentAccounts row from an approved PortalApplication. Returns the plaintext password (only ever returned here, for the approval email). */
 export async function createStudentAccount({ applicationId, studentName, className, email, parentPhone }) {
   const studentId = await generateNextStudentId();

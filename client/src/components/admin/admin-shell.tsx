@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  Gauge,
   Inbox,
   UserCheck,
   Users,
@@ -37,6 +38,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAdminMe, type TeacherPage } from '@/hooks/use-admin';
 
 export const ADMIN_SECTIONS = [
+  { value: 'dashboard', label: 'Dashboard', icon: Gauge },
   { value: 'inbox', label: 'Inbox', icon: Inbox },
   { value: 'applications', label: 'Applications', icon: UserCheck },
   { value: 'students', label: 'Students', icon: Users },
@@ -51,9 +53,9 @@ export const ADMIN_SECTIONS = [
   { value: 'teachers', label: 'Teachers', icon: Users2 },
 ] as const;
 
-/** The default page to land on after login — first item a teacher is actually allowed to see, else Inbox. */
+/** The default page to land on after login — first item a teacher is actually allowed to see, else the Dashboard. */
 export function firstAllowedSection(permissions: TeacherPage[] | null | undefined) {
-  if (!permissions) return 'inbox';
+  if (!permissions) return 'dashboard';
   return ADMIN_SECTIONS.find((s) => permissions.includes(s.value as TeacherPage))?.value ?? null;
 }
 

@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { matchesSearch } from '@/lib/utils';
 import { COACHING_CLASSES } from '@/constants/site';
 
-interface NoteRow { Id: string; Title: string; ClassName: string; Subject: string; FileUrl: string; Published: boolean | string; }
+interface NoteRow { Id: string; Title: string; ClassName: string; Subject: string; PdfUrl: string; Published: boolean | string; }
 
 const Subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'];
 
@@ -80,7 +80,7 @@ export function NotesPanel() {
             <div className="min-w-0 flex-1">
               <p className="font-display font-semibold">{n.Title}</p>
               <p className="text-xs text-muted-foreground">Class {n.ClassName} • {n.Subject}</p>
-              <a href={n.FileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-gold hover:underline">
+              <a href={n.PdfUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-gold hover:underline">
                 <ExternalLink className="size-3" /> Open Note
               </a>
             </div>

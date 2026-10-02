@@ -164,6 +164,13 @@ export function useAttendanceList<T = Record<string, unknown>>(enabled: boolean)
   return useAdminList<T>('attendance', '/admin/attendance', enabled);
 }
 
+export function useResetStudentPassword() {
+  return useMutation({
+    mutationFn: async ({ studentId, password, sendEmail }: { studentId: string; password?: string; sendEmail: boolean }) =>
+      (await api.post(`/admin/students/${studentId}/reset-password`, { password, sendEmail })).data.data as { password: string; emailSent: boolean },
+  });
+}
+
 // ---- Email (SMTP) settings ----
 
 export interface SmtpSettings {

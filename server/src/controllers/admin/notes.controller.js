@@ -26,7 +26,7 @@ export const create = asyncHandler(async (req, res) => {
     Title: req.body.title,
     ClassName: className,
     Subject: req.body.subject || '',
-    FileUrl: req.body.fileUrl,
+    PdfUrl: req.body.fileUrl,
     Published: false,
   });
   res.status(201).json({ success: true, data });
@@ -39,7 +39,7 @@ export const update = asyncHandler(async (req, res) => {
   if (req.body.title !== undefined) patch.Title = req.body.title;
   if (req.body.className !== undefined && !isTeacher(req)) patch.ClassName = req.body.className;
   if (req.body.subject !== undefined) patch.Subject = req.body.subject;
-  if (req.body.fileUrl !== undefined) patch.FileUrl = req.body.fileUrl;
+  if (req.body.fileUrl !== undefined) patch.PdfUrl = req.body.fileUrl;
   if (req.body.published !== undefined) patch.Published = req.body.published === 'true' || req.body.published === true;
 
   const data = await sheetsService.updateRow('Notes', req.params.id, patch);

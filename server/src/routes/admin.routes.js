@@ -56,6 +56,7 @@ router.post('/portal-applications/:id/reject', adminOnly, portalApplicationsCont
 
 // Enrolled students + attendance — teacher accounts see only their own batch.
 router.get('/students', requirePage('students'), studentsController.list);
+router.post('/students/:studentId/reset-password', requirePage('students'), studentsController.resetPassword);
 router.get('/attendance', requirePage('attendance'), attendanceController.list);
 
 // Testimonials — moderation only (publish/unpublish), no create/delete (they're user-submitted). Admin-only.

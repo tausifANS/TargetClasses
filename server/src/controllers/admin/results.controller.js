@@ -15,21 +15,20 @@ export const list = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  if (!req.body.studentName || !req.body.className) {
-    throw ApiError.badRequest('Student name and class are required');
+  if (!req.body.examName || !req.body.className) {
+    throw ApiError.badRequest('Exam name and class are required');
   }
   const className = isTeacher(req) ? req.user.className : req.body.className;
 
   const data = await sheetsService.appendRow('Results', {
     Id: uuid(),
     SubmittedAt: new Date().toISOString(),
-    StudentName: req.body.studentName,
+    ExamName: req.body.examName,
     ClassName: className,
     Subject: req.body.subject || '',
-    Marks: req.body.marks || '',
-    TotalMarks: req.body.totalMarks || '',
-    ExamName: req.body.examName || '',
-    Term: req.body.term || '',
+    ExamDate: req.body.examDate || '',
+    Description: req.body.description || '',
+    PdfUrl: req.body.pdfUrl || '',
     Published: false,
   });
   res.status(201).json({ success: true, data });
@@ -39,13 +38,12 @@ export const update = asyncHandler(async (req, res) => {
   if (isTeacher(req)) assertRowInTeacherScope(req, await findOwn(req.params.id));
 
   const patch = {};
-  if (req.body.studentName !== undefined) patch.StudentName = req.body.studentName;
+  if (req.body.examName !== undefined) patch.ExamName = req.body.examName;
   if (req.body.className !== undefined && !isTeacher(req)) patch.ClassName = req.body.className;
   if (req.body.subject !== undefined) patch.Subject = req.body.subject;
-  if (req.body.marks !== undefined) patch.Marks = req.body.marks;
-  if (req.body.totalMarks !== undefined) patch.TotalMarks = req.body.totalMarks;
-  if (req.body.examName !== undefined) patch.ExamName = req.body.examName;
-  if (req.body.term !== undefined) patch.Term = req.body.term;
+  if (req.body.examDate !== undefined) patch.ExamDate = req.body.examDate;
+  if (req.body.description !== undefined) patch.Description = req.body.description;
+  if (req.body.pdfUrl !== undefined) patch.PdfUrl = req.body.pdfUrl;
   if (req.body.published !== undefined) patch.Published = req.body.published === 'true' || req.body.published === true;
 
   const data = await sheetsService.updateRow('Results', req.params.id, patch);

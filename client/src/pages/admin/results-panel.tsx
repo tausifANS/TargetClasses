@@ -6,24 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { AdminSearchInput } from '@/components/admin/search-input';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { matchesSearch } from '@/lib/utils';
 import { COACHING_CLASSES } from '@/constants/site';
 
-interface ResultRow { Id: string; StudentName: string; ClassName: string; Subject: string; Marks: string; TotalMarks: string; ExamName: string; Term: string; Published: boolean | string; }
+interface ResultRow { Id: string; ExamName: string; ClassName: string; Subject: string; ExamDate: string; Description: string; PdfUrl: string; Published: boolean | string; }
 
 const Subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'];
 
 export function ResultsPanel() {
   const [search, setSearch] = useState('');
-  const [studentName, setStudentName] = useState('');
+  const [examName, setExamName] = useState('');
   const [className, setClassName] = useState('');
   const [subject, setSubject] = useState('');
-  const [marks, setMarks] = useState('');
-  const [totalMarks, setTotalMarks] = useState('');
-  const [examName, setExamName] = useState('');
-  const [term, setTerm] = useState('');
+  const [examDate, setExamDate] = useState('');
+  const [description, setDescription] = useState('');
+  const [pdfUrl, setPdfUrl] = useState('');
 
   const { data, isLoading } = useAdminList<ResultRow>('results', '/admin/results');
   const create = useAdminCreate('results', '/admin/results');
@@ -39,9 +38,9 @@ export function ResultsPanel() {
   }, [isTeacher, me?.className]);
 
   const handleCreate = () => {
-    if (!studentName || !className) { toast.error('Student name and class required'); return; }
-    create.mutate({ studentName, className, subject, marks, totalMarks, examName, term }, {
-      onSuccess: () => { toast.success('Result uploaded'); setStudentName(''); setMarks(''); setTotalMarks(''); setExamName(''); },
+    if (!examName || !className) { toast.error('Exam name and class required'); return; }
+    create.mutate({ examName, className, subject, examDate, description, pdfUrl }, {
+      onSuccess: () => { toast.success('Result published'); setExamName(''); setExamDate(''); setDescription(''); setPdfUrl(''); },
       onError: () => toast.error('Failed'),
     });
   };
@@ -52,11 +51,11 @@ export function ResultsPanel() {
         <h2 className="font-display text-xl font-bold">Results</h2>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Search results…" />
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">Upload student results for specific classes.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Publish exam results (with an optional PDF) for a class.</p>
 
       <div className="mt-5 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input value={studentName} onChange={e => setStudentName(e.target.value)} placeholder="Student name" />
+          <Input value={examName} onChange={e => setExamName(e.target.value)} placeholder="Exam name (e.g. Mid-Term)" />
           <Select value={className} onValueChange={setClassName} disabled={isTeacher}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Select class" /></SelectTrigger>
             <SelectContent>
@@ -71,30 +70,27 @@ export function ResultsPanel() {
               {Subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Input value={examName} onChange={e => setExamName(e.target.value)} placeholder="Exam name (e.g. Mid-Term)" />
+          <Input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} placeholder="Exam date" />
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Input value={marks} onChange={e => setMarks(e.target.value)} placeholder="Marks obtained" />
-          <Input value={totalMarks} onChange={e => setTotalMarks(e.target.value)} placeholder="Total marks" />
-          <Input value={term} onChange={e => setTerm(e.target.value)} placeholder="Term (e.g. First Half)" />
-        </div>
+        <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)" />
+        <Input value={pdfUrl} onChange={e => setPdfUrl(e.target.value)} placeholder="Result PDF / Google Drive link (optional)" />
         <Button onClick={handleCreate} size="sm" variant="gold" disabled={create.isPending}>
-          <Plus className="size-4" /> Upload Result
+          <Plus className="size-4" /> Publish Result
         </Button>
       </div>
 
       <div className="mt-5">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!isLoading && filtered.length === 0 && <p className="text-sm text-muted-foreground">No results uploaded yet.</p>}
+        {!isLoading && filtered.length === 0 && <p className="text-sm text-muted-foreground">No results published yet.</p>}
         {!isLoading && filtered.length > 0 && (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
+                <TableHead>Exam</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Subject</TableHead>
-                <TableHead>Exam</TableHead>
-                <TableHead>Marks</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>PDF</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead />
               </TableRow>
@@ -102,11 +98,17 @@ export function ResultsPanel() {
             <TableBody>
               {filtered.map(r => (
                 <TableRow key={r.Id}>
-                  <TableCell className="font-medium">{r.StudentName}</TableCell>
+                  <TableCell className="font-medium">{r.ExamName}</TableCell>
                   <TableCell>{r.ClassName}</TableCell>
                   <TableCell>{r.Subject}</TableCell>
-                  <TableCell>{r.ExamName}</TableCell>
-                  <TableCell>{r.Marks}/{r.TotalMarks}</TableCell>
+                  <TableCell>{r.ExamDate}</TableCell>
+                  <TableCell>
+                    {r.PdfUrl ? (
+                      <a href={r.PdfUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-gold hover:underline">
+                        <ExternalLink className="size-3" /> Open
+                      </a>
+                    ) : '—'}
+                  </TableCell>
                   <TableCell><Badge variant={r.Published ? 'default' : 'muted'} className="cursor-pointer" onClick={() => update.mutate({ id: r.Id, patch: { Published: r.Published !== true && r.Published !== 'true' } })}>{r.Published ? 'Published' : 'Draft'}</Badge></TableCell>
                   <TableCell><Button size="icon" variant="ghost" onClick={() => { if (confirm('Delete?')) remove.mutate(r.Id); }}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
                 </TableRow>

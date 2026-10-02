@@ -53,10 +53,14 @@ export const remove = asyncHandler(async (req, res) => {
 
 export const loginWithAccount = asyncHandler(async (req, res) => {
   const accounts = await sheetsService.listRows('AdminAccounts');
-  const account = accounts.find(
-    (a) => a.Username?.toLowerCase() === req.body.username.toLowerCase() && a.Status === 'Active'
-  );
-  if (!account) throw ApiError.unauthorized('Invalid credentials');
+  const account = accounts.find((a) => a.Username?.toLowerCase() === req.body.username.toLowerCase());
+  // Accept any status except an explicit "Inactive" — new rows default to "New" in
+  // the Sheet (same as every other sheet-backed table), and a strict === 'Active'
+  // check locked every freshly created account out with a misleading "Invalid
+  // credentials" until an admin manually flipped the Status cell.
+  if (!account || String(account.Status ?? '').toLowerCase() === 'inactive') {
+    throw ApiError.unauthorized('Invalid credentials');
+  }
 
   const valid = await bcrypt.compare(req.body.password, account.PasswordHash);
   if (!valid) throw ApiError.unauthorized('Invalid credentials');

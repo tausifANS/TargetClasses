@@ -26,6 +26,7 @@ import { useAdminMe, useIsAdminLoggedIn } from '@/hooks/use-admin';
 
 const StudentPortalPage = lazy(() => import('@/pages/student-portal').then((m) => ({ default: m.StudentPortalPage })));
 const AdminPortalPage = lazy(() => import('@/pages/admin-portal').then((m) => ({ default: m.AdminPortalPage })));
+const DashboardPanel = lazy(() => import('@/pages/admin/dashboard-panel').then((m) => ({ default: m.DashboardPanel })));
 const InboxPanel = lazy(() => import('@/pages/admin/inbox-panel').then((m) => ({ default: m.InboxPanel })));
 const ApplicationsPanel = lazy(() => import('@/pages/admin/applications-panel').then((m) => ({ default: m.ApplicationsPanel })));
 const StudentsPanel = lazy(() => import('@/pages/admin/students-attendance-panel').then((m) => ({ default: m.StudentsPanel })));
@@ -41,6 +42,7 @@ const ResultsPanel = lazy(() => import('@/pages/admin/results-panel').then((m) =
 const SettingsPanel = lazy(() => import('@/pages/admin/settings-panel').then((m) => ({ default: m.SettingsPanel })));
 
 const ADMIN_PANEL_ELEMENTS: Record<string, ReactNode> = {
+  dashboard: <DashboardPanel />,
   inbox: <InboxPanel />,
   applications: <ApplicationsPanel />,
   students: <StudentsPanel />,

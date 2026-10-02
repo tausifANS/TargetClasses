@@ -61,6 +61,20 @@ export function passwordResetEmail(resetUrl) {
     </div>`;
 }
 
+export function studentCredentialsEmail({ studentName, studentCode, tempPassword, loginUrl }) {
+  return `
+    <div style="font-family:Poppins,Arial,sans-serif;max-width:480px;margin:auto">
+      <h2 style="color:#16305C">Your Target Classes Student Portal login details</h2>
+      <p>Hi ${studentName}, here are your Student Portal login details.</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0">
+        <tr><td style="padding:6px 0;color:#666">Student ID</td><td style="font-weight:600">${studentCode}</td></tr>
+        <tr><td style="padding:6px 0;color:#666">Password</td><td style="font-weight:600">${tempPassword}</td></tr>
+      </table>
+      <p><a href="${loginUrl}" style="background:#16305C;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">Open Student Portal</a></p>
+      <p style="color:#666;font-size:13px">Keep your Student ID safe — you'll use it to log in going forward. You can change your password any time from the portal.</p>
+    </div>`;
+}
+
 export function admissionApprovedEmail({ studentName, studentCode, tempPassword, loginUrl }) {
   return `
     <div style="font-family:Poppins,Arial,sans-serif;max-width:480px;margin:auto">
