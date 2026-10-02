@@ -33,7 +33,7 @@ const TEACHER_PAGE_OPTIONS: { value: TeacherPage; label: string }[] = [
 ];
 
 function EmailSettingsSection() {
-  const { data, isLoading } = useSmtpSettings(true);
+  const { data, isLoading, isError, error, refetch, isRefetching } = useSmtpSettings(true);
   const update = useUpdateSmtpSettings();
 
   const [host, setHost] = useState('');
@@ -72,6 +72,19 @@ function EmailSettingsSection() {
       </p>
 
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
+
+      {isError && (
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5">
+          <ShieldAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground">Couldn't load email settings</p>
+            <p className="mt-1 text-muted-foreground">{apiErrorMessage(error, 'The Settings sheet may not exist yet in your Google Sheet, or the Apps Script deployment is out of date — redeploy it from the Apps Script editor (Deploy → Manage deployments → New version).')}</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()} disabled={isRefetching}>
+              {isRefetching ? 'Retrying…' : 'Retry'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {data && (
         <>
